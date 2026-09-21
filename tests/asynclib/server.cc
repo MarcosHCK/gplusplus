@@ -1,12 +1,12 @@
 /* Copyright (C) 2025-2026 MarcosHCK
- * This file is part of asynclib.
+ * This file is part of gio++.
  *
- * asynclib is free software: you can redistribute it and/or modify
+ * gio++ is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * asynclib is distributed in the hope that it will be useful,
+ * gio++ is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -51,7 +51,7 @@ void testing::socket_server::finish_setup (std::string_view line)
               | std::ranges::to<std::vector> ();
 
   if (G_UNLIKELY (3 != pieces.size ()))
-    throw asynclib::glib_error::literal (G_IO_ERROR, G_IO_ERROR_FAILED, "invalid server tag line");
+    throw boxing::error::literal (G_IO_ERROR, G_IO_ERROR_FAILED, "invalid server tag line");
 
   _hash = g_strndup (pieces [0].data (), pieces [0].size ());
 }

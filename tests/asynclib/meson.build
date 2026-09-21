@@ -1,12 +1,12 @@
 # Copyright (C) 2025-2026 MarcosHCK
-# This file is part of asynclib.
+# This file is part of gio++.
 #
-# asynclib is free software: you can redistribute it and/or modify
+# gio++ is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# asynclib is distributed in the hope that it will be useful,
+# gio++ is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -15,7 +15,7 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-c_args = [ '-DG_LOG_DOMAIN="Asynclib.Tests"',
+c_args = [ '-DG_LOG_DOMAIN="GIO++.Tests.Asynclib"',
                      '-DG_LOG_USE_STRUCTURED=1',
                      '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
                      '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()), ]

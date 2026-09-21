@@ -1,12 +1,12 @@
 /* Copyright (C) 2025-2026 MarcosHCK
- * This file is part of asynclib.
+ * This file is part of gio++.
  *
- * asynclib is free software: you can redistribute it and/or modify
+ * gio++ is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * asynclib is distributed in the hope that it will be useful,
+ * gio++ is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -15,20 +15,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <asynclib/gliberror.h>
 #include <csignal>
 #include <gio/gio.h>
+#include <gio++/asynclib/error.h>
 #include <string_view>
 
 namespace testing
 {
-
   class socket_server;
 }
 
-#ifndef PYTHONEXE
-# define PYTHONEXE "python3"
-#endif // PYTHONEXE
+#ifndef PYTHON_EXE
+# define PYTHON_EXE "python3"
+#endif // PYTHON_EXE
 
 class testing::socket_server
 {
@@ -73,11 +72,11 @@ public:
       g_subprocess_launcher_set_child_setup (subprocess_launcher, child_setup, NULL, NULL);
 
       auto subprocess = g_subprocess_launcher_spawn (subprocess_launcher, &tmperr,
-                                                     PYTHONEXE, server_script, "-b", local_address, "-p", port_string, "-s", blob_size, NULL);
+                                                     PYTHON_EXE, server_script, "-b", local_address, "-p", port_string, "-s", blob_size, NULL);
       g_object_unref (subprocess_launcher);
 
       if ((g_free (blob_size), g_free (local_address), g_free (port_string), g_free (server_script)); G_UNLIKELY (NULL != tmperr))
-        throw asynclib::glib_error (tmperr);
+        throw boxing::error (tmperr);
 
       auto stdout_pipe = g_data_input_stream_new (g_subprocess_get_stdout_pipe (subprocess));
       auto stdout_size = (gsize) 0;
@@ -90,6 +89,6 @@ public:
 
         finish_setup (line), g_free (line), _subprocess = subprocess;
       else
-        throw asynclib::glib_error (NULL != tmperr ? tmperr : g_error_new_literal (G_IO_ERROR, G_IO_ERROR_FAILED, "http server didn't started"));
+        throw boxing::error (NULL != tmperr ? tmperr : g_error_new_literal (G_IO_ERROR, G_IO_ERROR_FAILED, "http server didn't started"));
     }
 };

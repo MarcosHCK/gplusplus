@@ -15,25 +15,32 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-basepath = meson.current_source_dir ()
-testpathroot = '/org/hck/gioplusplus/asynclib'
-
 gio_dep = dependency ('gio-2.0', required: true)
 
-__testing_lib = static_library ('testing',
-  c_args: [ '-DG_LOG_DOMAIN="GIO++.Tests"', '-DG_LOG_USE_STRUCTURED=1',
-            '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
-            '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()),
-            '-DTESTPATHROOT="@0@"'.format (testpathroot) ],
-  cpp_args: [ '-DG_LOG_DOMAIN="GIO++.Tests"', '-DG_LOG_USE_STRUCTURED=1',
-              '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
-              '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()),
-              '-DTESTPATHROOT="@0@"'.format (testpathroot) ],
-  build_by_default: false,
-  dependencies: [ config_dep, gio_dep ],
-  sources: [ 'testing.cc', 'testing.h' ])
+# level 0
+subdir ('common')
 
-__testing_dep = declare_dependency (dependencies: [ config_dep, gio_dep ],
-  link_with: __testing_lib)
-
+# level 1
 subdir ('asynclib')
+
+__gioplusplus_ssl = [ ]
+
+foreach bit: [ __asynclib_dep, __common_dep ]
+
+  __gioplusplus_ssl += [ bit.as_link_whole () ]
+endforeach
+
+__gioplusplus_lib = library ('gioplusplus',
+  c_args: [ '-DG_LOG_DOMAIN="GIO++.Common"', '-DG_LOG_USE_STRUCTURED=1',
+            '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
+            '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()) ],
+  cpp_args: [ '-DG_LOG_DOMAIN="GIO++.Common"', '-DG_LOG_USE_STRUCTURED=1',
+              '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
+              '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()) ],
+  dependencies: [ config_dep, __gioplusplus_ssl ],
+  sources: 'dummy.cc')
+
+__gioplusplus_dep = declare_dependency (dependencies: [ gio_dep, glib_dep, gobject_dep ],
+  link_with: __gioplusplus_lib)
+
+meson.override_dependency ('gioplusplus', __gioplusplus_dep)
