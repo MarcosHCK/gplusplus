@@ -80,16 +80,16 @@ namespace gioplusplus::asynclib
 
   template<typename Action>
     requires (std::is_invocable_v<Action>)
-  static inline constexpr auto offload (Action&& action) noexcept (std::is_nothrow_move_constructible_v<Action>)
+  static inline constexpr auto offload (Action&& action) noexcept (std::is_nothrow_constructible_v<Action, Action>)
     {
 
       using return_type = std::invoke_result_t<Action>;
 
-      auto begin = [action = std::move (action)] (GAsyncReadyCallback callback, gpointer user_data)
+      auto begin = [action = std::forward<Action> (action)] (GAsyncReadyCallback callback, gpointer user_data)
           mutable noexcept (std::is_nothrow_move_constructible_v<Action>) -> void
         {
 
-          auto task_data = g_slice_new_<Action> (std::move (action));
+          auto task_data = g_slice_new_<Action> (std::forward<Action> (action));
           auto task = boxing::object (g_task_new (NULL, NULL, callback, user_data));
 
           g_task_set_task_data (task, task_data, g_slice_free_<Action>);
