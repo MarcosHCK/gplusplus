@@ -55,16 +55,23 @@ namespace gioplusplus::asynclib::details
 
           auto data = new (g_slice_alloc0 (sizeof (Data))) Data (handle, *this);
 
-          this->_task ([] (GObject* source_object, GAsyncResult* async_result, gpointer user_data)
+          try { this->_task ([] (GObject* source_object, GAsyncResult* async_result, gpointer user_data)
             {
-
               auto handle = ((Data*) user_data)->handle;
               ((Data*) user_data)->self.await_complete (source_object, async_result);
               ((Data*) user_data)->~Data ();
 
               g_slice_free1 (sizeof (Data), user_data);
               handle.resume ();
-            }, data);
+            }, data); }
+          catch (...)
+            {
+
+              this->_error = error::to_glib_error (std::current_exception ());
+              ((Data*) data)->~Data ();
+              g_slice_free1 (sizeof (Data), data);
+              handle.resume ();
+            }
         }
 
     private:

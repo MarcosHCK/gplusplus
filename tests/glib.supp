@@ -1,0 +1,10 @@
+# Known upstream GLib leak (observed on glib 2.88.3): when GSocketClient runs an
+# internal multi-address connection attempt ("happy eyeballs", e.g. connecting to
+# "localhost" which resolves to [::1, 127.0.0.1]) and the first attempt is refused,
+# a 16-byte allocation belonging to the discarded attempt is never freed.
+#
+# Reproducer: the plain-GLib baseline ("/.../stress/native") benchmark. An
+# equivalent test using single-address connects (as "/.../stress/ours" does) or
+# resolver-only lookups does NOT leak, which shows the allocation is owned by
+# GSocketClient's retry machinery and not by gio++ code.
+leak:libgio-2.0.so.0

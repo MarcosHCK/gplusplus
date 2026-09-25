@@ -36,7 +36,7 @@ namespace gioplusplus::asynclib::details
           if (G_UNLIKELY (nullptr != _error))
             {
               auto error = _error.release ();
-              std::rethrow_exception (error::from_glib_error ((_error = nullptr, error)));
+              std::rethrow_exception (error::from_glib_error (error));
             }
         return std::move (_return).value ();
         }
@@ -78,7 +78,7 @@ namespace gioplusplus::asynclib::details
           if (G_UNLIKELY (nullptr != _error))
             {
               auto error = _error.release ();
-              std::rethrow_exception (error::from_glib_error ((_error = nullptr, error)));
+              std::rethrow_exception (error::from_glib_error (error));
             }
         }
 

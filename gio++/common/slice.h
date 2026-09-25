@@ -29,23 +29,12 @@ static inline void g_slice_free_ (A* object) noexcept (std::is_nothrow_destructi
 }
 
 template<typename T,
-         typename... Args,
-         typename = std::enable_if_t<std::is_constructible_v<T, Args ...>>>
+         typename... Args>
+  requires std::is_constructible_v<T, Args ...>
 static inline T* g_slice_new_ (Args&&... args) noexcept (std::is_nothrow_constructible_v<T, Args ...>)
 {
 
   auto mem = g_slice_alloc (sizeof (T));
-  auto ptr = new (mem) T (std::forward<Args> (args) ...);
-return ptr;
-}
-
-template<typename T,
-         typename... Args,
-         typename = std::enable_if_t<std::is_constructible_v<T, Args ...>>>
-static inline T* g_slice_new0_ (Args&&... args) noexcept (std::is_nothrow_constructible_v<T, Args ...>)
-{
-
-  auto mem = g_slice_alloc0 (sizeof (T));
   auto ptr = new (mem) T (std::forward<Args> (args) ...);
 return ptr;
 }

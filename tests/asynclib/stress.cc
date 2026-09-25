@@ -307,6 +307,7 @@ static void io_work_native_co (GObject* source_object, GAsyncResult* result, gpo
         stage_data.set_stage (io_work_native_data::stage_2 { .stack = std::move (data) });
 
         g_socket_client_connect_async (data.socket_client, socket_connectable, cancellable, io_work_native_co, user_data);
+        g_object_unref (socket_address);
         break;
       }
 
@@ -316,9 +317,14 @@ static void io_work_native_co (GObject* source_object, GAsyncResult* result, gpo
 
         if (connection = g_socket_client_connect_finish ((GSocketClient*) source_object, result, &tmperr); G_UNLIKELY (NULL != tmperr))
 
-          stage_data.set_stage (io_work_native_data::stage_1 (std::move (data.stack)));
+          { g_clear_error (&tmperr);
+            stage_data.set_stage (io_work_native_data::stage_1 (std::move (data.stack))); }
         else
-          stage_data.set_stage (io_work_native_data::stage_3 ((GIOStream*) connection));
+          /* Take an explicit reference for the duration of the pipeline: some GLib
+           * versions only keep the connection returned by
+           * g_socket_client_connect_finish() alive until the completion callback
+           * returns (the reference is owned by the client-side connect data). */
+          stage_data.set_stage (io_work_native_data::stage_3 ((GIOStream*) g_object_ref (connection)));
 
         return io_work_native_co (source_object, result, user_data);
       }
@@ -334,7 +340,6 @@ static void io_work_native_co (GObject* source_object, GAsyncResult* result, gpo
         auto cancellable = g_task_get_cancellable (task);
         auto output_stream = g_io_stream_get_output_stream (data.stream);
 
-        g_object_ref (data.stream); // ???
         stage_data.set_stage (io_work_native_data::stage_4 (g_checksum_new (checksum_type), g_object_ref (data.stream)));
 
         g_output_stream_write_all_async (output_stream, request, sizeof (request) - 1, G_PRIORITY_DEFAULT, cancellable, io_work_native_co, user_data);
@@ -343,7 +348,7 @@ static void io_work_native_co (GObject* source_object, GAsyncResult* result, gpo
 
     case 4: { auto& data = stage_data.get_stage<io_work_native_data::stage_4> ();
 
-        g_assert (1 == data.stream->parent_instance.ref_count);
+        g_assert (G_IS_IO_STREAM (data.stream));
         auto written = (gsize) 0;
 
         if (g_output_stream_write_all_finish ((GOutputStream*) source_object, result, &written, &tmperr); G_UNLIKELY (NULL != tmperr))
@@ -427,7 +432,7 @@ static gioplusplus::asynclib::task<GIOStream*> reach_any_task (GList* addresses,
         { auto socket_connectable = G_SOCKET_CONNECTABLE (socket_address);
           auto io_stream = co_await g_socket_client_connect_task (socket_client, socket_connectable, cancellable);
           co_return (g_object_unref (socket_client), g_object_unref (socket_address), (GIOStream*) io_stream); }
-      catch (boxing::error error)
+      catch (const boxing::error&)
         { g_object_unref (socket_address); }
     }
 
@@ -449,7 +454,7 @@ static gioplusplus::asynclib::task<std::pair<gsize, gchar*>> io_work_ours (const
   GIOStream* connection; try
     { connection = co_await reach_any_task (addresses, port, cancellable);
       g_resolver_free_addresses (addresses); }
-  catch (boxing::error)
+  catch (const boxing::error&)
     { g_resolver_free_addresses (addresses); throw; }
 
   constexpr const gchar request [] = "GET / HTTP/1.1\r\n"
@@ -459,7 +464,7 @@ static gioplusplus::asynclib::task<std::pair<gsize, gchar*>> io_work_ours (const
   try
     { auto output_stream = g_io_stream_get_output_stream (connection);
       co_await g_output_stream_write_all_task (output_stream, request, G_N_ELEMENTS (request) - 1, G_PRIORITY_DEFAULT, cancellable); }
-  catch (boxing::error)
+  catch (const boxing::error&)
     { g_object_unref (connection); throw; }
 
   auto checksum = g_checksum_new (G_CHECKSUM_SHA256);

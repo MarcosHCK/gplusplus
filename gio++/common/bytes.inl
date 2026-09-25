@@ -37,16 +37,21 @@ public:
     return { data, size };
     }
 
-  inline bool operator== (std::nullptr_t) const noexcept
-    { return nullptr == get (); }
+  template<typename Other>
+    requires std::same_as<boxing::bytes, Other>
+  inline bool operator== (const Other& bytes) const noexcept
+    {
+      auto a = get ();
+      auto b = bytes.get ();
+    return (nullptr == a || nullptr == b) ? a == b : g_bytes_equal (a, b);
+    }
 
-  inline bool operator== (boxing::bytes bytes) const noexcept
-    { return g_bytes_equal (*this, bytes); }
-
-  inline bool operator== (std::string_view view) const noexcept
+  template<typename Other>
+    requires std::same_as<std::string_view, Other>
+  inline bool operator== (const Other& view) const noexcept
     {
       auto [ data, size ] = this->data ();
-    return size == view.size () && 0 == memcmp (data, view.data (), size);
+    return size == view.size () && (0 == size || 0 == std::memcmp (data, view.data (), size));
     }
 };
 
@@ -57,7 +62,7 @@ public:
   inline constexpr std::size_t operator() (boxing::bytes bytes) const noexcept
     {
       auto [ data, size ] = bytes.data ();
-      auto hash = hashing::fnv_1a<std::size_t, char> (std::span ((char*) data, size));
+      auto hash = hashing::fnv_1a<std::size_t, std::uint8_t> (std::span ((const std::uint8_t*) data, size));
     return hash;
     };
 };

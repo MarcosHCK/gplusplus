@@ -28,6 +28,7 @@ namespace gioplusplus::asynclib::details
     };
 
   template<bool Noexcept, typename... Args>
+    requires (sizeof... (Args) >= 2)
   struct async_function_begin_details<void (*) (Args...) noexcept (Noexcept)>
     {
 

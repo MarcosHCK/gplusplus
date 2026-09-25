@@ -60,7 +60,9 @@ namespace gioplusplus::asynclib::details
 
       static inline constexpr bool noexcept_v = std::is_nothrow_invocable_v<Functor, GAsyncReadyCallback, gpointer>;
 
-      inline constexpr async_task (Functor&& _begin) noexcept: begin (std::forward<Functor&&> (_begin))
+      template<typename Functor_ = Functor>
+        requires std::convertible_to<Functor_, Functor>
+      inline constexpr async_task (Functor_&& _begin) noexcept: begin (std::forward<Functor_> (_begin))
         { }
 
       inline constexpr void operator() (GAsyncReadyCallback callback, gpointer user_data) noexcept (noexcept_v)

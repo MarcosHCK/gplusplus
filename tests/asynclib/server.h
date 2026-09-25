@@ -18,6 +18,7 @@
 #include <csignal>
 #include <gio/gio.h>
 #include <gio++/asynclib/error.h>
+#include <gio++/common/boxing.h>
 #include <string_view>
 
 namespace testing
@@ -63,32 +64,41 @@ public:
       constexpr GSubprocessFlags flags = (GSubprocessFlags) (flag1 | flag2);
       GError* tmperr = nullptr;
 
-      auto blob_size = g_strndup (blob_size_.data (), blob_size_.size ());
-      auto local_address = g_strndup (local_address_.data (), local_address_.size ());
-      auto port_string = g_strdup_printf ("%i", (int) port);
-      auto server_script = g_build_filename (SOURCE_DIR, "server.py", NULL);
+      auto blob_size = boxing::freeable<gchar> (g_strndup (blob_size_.data (), blob_size_.size ()));
+      auto local_address = boxing::freeable<gchar> (g_strndup (local_address_.data (), local_address_.size ()));
+      auto port_string = boxing::freeable<gchar> (g_strdup_printf ("%i", (int) port));
+      auto server_script = boxing::freeable<gchar> (g_build_filename (SOURCE_DIR, "server.py", NULL));
 
-      auto subprocess_launcher = g_subprocess_launcher_new (flags);
+      auto subprocess_launcher = boxing::object<GSubprocessLauncher> (g_subprocess_launcher_new (flags));
       g_subprocess_launcher_set_child_setup (subprocess_launcher, child_setup, NULL, NULL);
 
-      auto subprocess = g_subprocess_launcher_spawn (subprocess_launcher, &tmperr,
-                                                     PYTHON_EXE, server_script, "-b", local_address, "-p", port_string, "-s", blob_size, NULL);
-      g_object_unref (subprocess_launcher);
+      auto subprocess = boxing::object<GSubprocess> (g_subprocess_launcher_spawn (subprocess_launcher, &tmperr,
+        PYTHON_EXE, server_script.get (), "-b", local_address.get (), "-p", port_string.get (), "-s", blob_size.get (), NULL));
 
-      if ((g_free (blob_size), g_free (local_address), g_free (port_string), g_free (server_script)); G_UNLIKELY (NULL != tmperr))
+      if (G_UNLIKELY (NULL != tmperr))
         throw boxing::error (tmperr);
 
-      auto stdout_pipe = g_data_input_stream_new (g_subprocess_get_stdout_pipe (subprocess));
+      auto stdout_pipe = boxing::object<GDataInputStream> (g_data_input_stream_new (g_subprocess_get_stdout_pipe (subprocess)));
       auto stdout_size = (gsize) 0;
-      g_buffered_input_stream_set_buffer_size ((GBufferedInputStream*) stdout_pipe, 1);
+      g_buffered_input_stream_set_buffer_size ((GBufferedInputStream*) stdout_pipe.get (), 1);
 
       auto line = g_data_input_stream_read_line_utf8 (stdout_pipe, &stdout_size, NULL, &tmperr);
-      g_object_unref (stdout_pipe);
 
       if (G_LIKELY (NULL == tmperr && NULL != line))
 
-        finish_setup (line), g_free (line), _subprocess = subprocess;
+        { finish_setup (line);
+
+          g_free (line);
+
+          _subprocess = subprocess.release (); }
       else
-        throw boxing::error (NULL != tmperr ? tmperr : g_error_new_literal (G_IO_ERROR, G_IO_ERROR_FAILED, "http server didn't started"));
+        {
+          /* the server failed to start: kill the child so it does not outlive the test */
+          if (G_LIKELY (NULL != subprocess))
+            g_subprocess_send_signal (subprocess, SIGINT),
+            g_subprocess_wait (subprocess, NULL, NULL);
+
+          throw boxing::error (NULL != tmperr ? tmperr : g_error_new_literal (G_IO_ERROR, G_IO_ERROR_FAILED, "http server didn't started"));
+        }
     }
 };

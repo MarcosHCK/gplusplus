@@ -23,6 +23,7 @@ namespace bits
 {
 
   template<std::size_t _Value>
+    requires (_Value > 0)
     struct log2 { static inline constexpr std::size_t value = 1 + log2<_Value / 2>::value; };
 
   template<>
@@ -32,7 +33,7 @@ namespace bits
     static inline constexpr std::size_t log2_v = log2<_Value>::value;
 
   template<std::size_t _Value>
-    static inline constexpr bool is_pow2_v = _Value == (1 << log2_v<_Value>);
+    static inline constexpr bool is_pow2_v = _Value > 0 && (_Value & (_Value - 1)) == 0;
 }
 
 namespace bits
@@ -40,7 +41,7 @@ namespace bits
 
   template<std::size_t _By,
            std::unsigned_integral T>
-    requires (_By < static_cast<std::size_t> (std::numeric_limits<T>::max ()))
+    requires (0 < _By && _By < static_cast<std::size_t> (std::numeric_limits<T>::max ()))
   [[gnu::always_inline]]
   static inline constexpr T align_up (T value) noexcept
     {
@@ -49,10 +50,10 @@ namespace bits
 
   template<std::size_t _By,
            std::unsigned_integral T>
-    requires (sizeof (T) * CHAR_BIT >= _By)
+    requires (0 < _By && _By < sizeof (T) * CHAR_BIT)
   [[gnu::always_inline]]
   static inline constexpr T rot (T value) noexcept
     {
-      return (value << _By) | (value << (sizeof (T) * CHAR_BIT - _By));
+      return (value << _By) | (value >> (sizeof (T) * CHAR_BIT - _By));
     }
 }

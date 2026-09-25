@@ -73,9 +73,10 @@ static inline gdouble percentile (const std::vector<gdouble>& sorted, double per
     return 0;
 
   auto rank = (per / 100.) * (gdouble) sorted.size ();
+  rank = std::clamp (rank, 0., (gdouble) (sorted.size () - 1));
 
   auto lower_index = (size_t) std::floor (rank);
-  auto upper_index = (size_t) std::floor (rank);
+  auto upper_index = (size_t) std::ceil (rank);
 
   if (lower_index == upper_index)
     return sorted [lower_index];
@@ -87,6 +88,9 @@ return value;
 
 void testing::g_test_analyze_times (const std::vector<gdouble>& times) noexcept
 {
+
+  if (times.empty ())
+    return (g_test_message ("no timing data collected"), void ());
 
   auto g_str = g_string_sized_new (256);
   auto count = times.size ();
@@ -103,13 +107,13 @@ void testing::g_test_analyze_times (const std::vector<gdouble>& times) noexcept
   g_string_append_printf (g_str, "median: %lf\n", q2 = percentile (times, 50.));
 
   g_string_append_printf (g_str, "quartiles\n");
-  g_string_append_printf (g_str, "  " "75%%: %lf\n", q1 = percentile (times, 75.));
-  g_string_append_printf (g_str, "  " "50%%: %lf\n", q2);
-  g_string_append_printf (g_str, "  " "25%%: %lf\n", q3 = percentile (times, 25.));
+  g_string_append_printf (g_str, "  " "75%%: %lf\n", q3 = percentile (times, 75.));
+  g_string_append_printf (g_str, "  " "50%%: %lf\n", q2 = percentile (times, 50.));
+  g_string_append_printf (g_str, "  " "25%%: %lf\n", q1 = percentile (times, 25.));
   g_string_append_printf (g_str, "  " "iqr: %lf\n", q3 - q1);
 
   g_string_append_printf (g_str, "percentiles\n");
-  g_string_append_printf (g_str, "  " "95%%: %lf\n", percentile (times, 98.));
+  g_string_append_printf (g_str, "  " "95%%: %lf\n", percentile (times, 95.));
   g_string_append_printf (g_str, "  " "90%%: %lf\n", percentile (times, 90.));
   g_string_append_printf (g_str, "  " "80%%: %lf\n", percentile (times, 80.));
   g_string_append_printf (g_str, "  " "10%%: %lf\n", percentile (times, 10.));
@@ -119,14 +123,16 @@ void testing::g_test_analyze_times (const std::vector<gdouble>& times) noexcept
   for (gdouble value: times)
     sum += pow_n<2> (value - mean);
 
-  auto stddev = sum / (double) (count - 1);
-  auto stddev_p = sum / (double) count;
+  auto variance = sum / (double) (count - 1);
+  auto stddev = (count > 1) ? std::sqrt (variance) : 0.;
+  auto variance_p = sum / (double) count;
+  auto stddev_p = (count > 0) ? std::sqrt (variance_p) : 0.;
 
-  g_string_append_printf (g_str, "variance: %lf\n", stddev);
-  g_string_append_printf (g_str, "standard variance: %lf\n", stddev = std::sqrt (stddev));
+  g_string_append_printf (g_str, "variance: %lf\n", variance);
+  g_string_append_printf (g_str, "standard deviation: %lf\n", stddev);
 
-  g_string_append_printf (g_str, "population variance: %lf\n", stddev_p);
-  g_string_append_printf (g_str, "population standard variance: %lf\n", stddev_p = std::sqrt (stddev_p));
+  g_string_append_printf (g_str, "population variance: %lf\n", variance_p);
+  g_string_append_printf (g_str, "population standard deviation: %lf\n", stddev_p);
 
   g_string_append_printf (g_str, "skewness: %lf\n", skewness (times, mean, stddev));
   g_string_append_printf (g_str, "kurtosis: %lf\n", kurtosis (times, mean, stddev));

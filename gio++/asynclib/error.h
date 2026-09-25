@@ -38,6 +38,6 @@ namespace gioplusplus::asynclib::details
       static GError* to_glib_error (std::exception_ptr ptr) noexcept;
 
       virtual const char* what () const _GLIBCXX_TXN_SAFE_DYN noexcept override
-        { return (**this)->message; }
+        { return nullptr == get () ? "" : get ()->message; }
     };
 }

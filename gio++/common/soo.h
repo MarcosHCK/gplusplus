@@ -33,7 +33,7 @@ namespace soo_ptr
   static inline const T* cast (const void** location) noexcept
     {
 
-      if constexpr (constexpr auto s = sizeof (T); sizeof (void*) >= s)
+      if constexpr (sizeof (void*) >= sizeof (T) && alignof (void*) >= alignof (T))
 
         return (const T*) location;
       else
@@ -44,24 +44,35 @@ namespace soo_ptr
   static inline T* cast (void** location) noexcept
     {
 
-      if constexpr (constexpr auto s = sizeof (T); sizeof (void*) >= s)
+      if constexpr (sizeof (void*) >= sizeof (T) && alignof (void*) >= alignof (T))
 
         return (T*) location;
       else
         return (T*) *location;
     }
 
-  template<typename T, details::allocator_alloc Alloc = g_slice_alloc0,
+  template<typename T,
+           details::allocator_alloc Alloc = g_slice_alloc,
+           details::allocator_free Free = g_slice_free1,
            typename... Args>
     requires (std::is_constructible_v<T, Args ...>)
   static inline T* create (void** location, Args&&... args) noexcept (std::is_nothrow_constructible_v<T, Args ...>)
     {
 
-      if constexpr (constexpr auto s = sizeof (T); sizeof (void*) >= s)
+      if constexpr (sizeof (void*) >= sizeof (T) && alignof (void*) >= alignof (T))
+        return new (location) T (std::forward<Args> (args) ...);
 
-        return new ((*location = NULL, location)) T (std::forward<Args> (args) ...);
+      else if constexpr (std::is_nothrow_constructible_v<T, Args ...>)
+        return new (*location = Alloc (sizeof (T))) T (std::forward<Args> (args) ...);
+
       else
-        return new ((*location = Alloc (s))) T (std::forward<Args> (args) ...);
+        { *location = Alloc (sizeof (T));
+
+          try
+            { return new (*location) T (std::forward<Args> (args) ...); }
+          catch (...)
+            { Free (sizeof (T), *location); throw; }
+        }
     }
 
   template<typename T, details::allocator_free Free = g_slice_free1>
@@ -69,10 +80,10 @@ namespace soo_ptr
   static inline void destroy (void** location) noexcept (std::is_nothrow_destructible_v<T>)
     {
 
-      if constexpr (constexpr auto s = sizeof (T); sizeof (void*) >= s)
+      if constexpr (sizeof (void*) >= sizeof (T) && alignof (void*) >= alignof (T))
 
         return ((T*) location)->~T ();
       else
-        return ((T*) *location)->~T (), Free (s, *location);
+        return ((T*) *location)->~T (), Free (sizeof (T), *location);
     }
 }

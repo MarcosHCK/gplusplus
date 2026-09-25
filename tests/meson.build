@@ -36,4 +36,14 @@ __testing_lib = static_library ('testing',
 __testing_dep = declare_dependency (dependencies: [ config_dep, gio_dep ],
   link_with: __testing_lib)
 
+__testing_env = [ ]
+
+if get_option ('b_sanitize') == 'address,undefined' or get_option ('b_sanitize').contains ('address')
+
+  # Work around an upstream GLib happy-eyeballs leak (see glib.supp) so the
+  # sanitizer gate stays green without distorting the plain-GLib baseline.
+  __testing_env += [ 'LSAN_OPTIONS=suppressions=@0@'.format (meson.current_source_dir () / '..' / 'glib.supp') ]
+endif
+
 subdir ('asynclib')
+subdir ('common')

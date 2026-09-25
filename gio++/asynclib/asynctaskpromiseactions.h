@@ -45,15 +45,28 @@ namespace gioplusplus::asynclib::details
 
   template<typename T>
     requires (std::is_move_constructible_v<T>)
-  static inline constexpr T g_task_propagate_object (GTask* task, GError** error) noexcept (std::is_nothrow_move_constructible_v<T>)
+  static inline constexpr T g_task_propagate_object (GTask* task, GError** error) noexcept (std::is_nothrow_move_constructible_v<T>
+                                                                                         && (!std::is_destructible_v<T> || std::is_nothrow_destructible_v<T>))
     {
 
       GError* tmperr = NULL;
 
-      if (auto ptr = g_task_propagate_pointer (task, &tmperr); G_LIKELY (NULL == tmperr))
+      if (auto ptr = g_task_propagate_pointer (task, &tmperr); G_UNLIKELY (NULL != tmperr))
 
-        return std::move (*soo_ptr::cast<T> (&ptr));
-      else
         return (g_propagate_error (error, tmperr), T ());
+      else
+        {
+          T result (std::move (*(T*) soo_ptr::cast<T> (&ptr)));
+
+          if constexpr (std::is_destructible_v<T>)
+            _g_task_return_object_notify<T> (ptr);
+        return result;
+        }
+    }
+
+  template<>
+  inline constexpr bool g_task_propagate_object<bool> (GTask* task, GError** error) noexcept
+    {
+      return g_task_propagate_boolean (task, error);
     }
 }

@@ -15,38 +15,22 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-c_args = [ '-DG_LOG_DOMAIN="GIO++.Tests.Asynclib"',
+c_args = [ '-DG_LOG_DOMAIN="GIO++.Tests.Common"',
            '-DG_LOG_USE_STRUCTURED=1',
            '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
            '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()), ]
 
 testpath = meson.current_source_dir ().replace (basepath + '/', '')
 
-__test_env = [ 'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
-               'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()) ]
-
-test ((testpath + '/stress').replace ('/', '.'),
-      executable ('stress',
+test ((testpath + '/bytes').replace ('/', '.'),
+      executable ('bytes',
             c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'stress') ],
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'bytes') ],
             cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'stress') ],
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'bytes') ],
             build_by_default: false,
             dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
-            sources: [ 'server.cc', 'server.h', 'stress.cc' ]),
-      env: [ __testing_env,
-             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
-             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ] )
-
-test ((testpath + '/task').replace ('/', '.'),
-      executable ('task',
-            c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'task') ],
-            cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'task') ],
-            build_by_default: false,
-            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
-            sources: 'task.cc'),
+            sources: 'bytes.cc'),
       env: [ __testing_env,
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ] )

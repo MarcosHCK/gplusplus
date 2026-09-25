@@ -74,7 +74,7 @@ namespace testing::details
 namespace testing
 {
 
-  #define g_assert_cmpstrview(view1,op,view2) G_STMT_START { \
+# define g_assert_cmpstrview(view1,op,view2) G_STMT_START { \
  ; \
     std::string_view __view1 = ((view1)); \
     std::string_view __view2 = ((view2)); \
@@ -143,23 +143,81 @@ namespace testing
     return g_test_analyze_times (sorted);
     }
 
+  namespace details
+    {
+
+      template<typename T1, typename T2>
+      concept equatable = requires (const T1& a, const T2& b)
+        {
+          a == b;
+          { a == b } -> std::same_as<bool>;
+        };
+
+      template<typename T, typename Ret, typename... Args>
+      concept invocable_r = requires ()
+        {
+          requires std::is_invocable_r_v<Ret, T, Args ...>;
+        };
+    }
+
   template<unsigned N>
   static inline void g_test_rand_data (guint8 (&ar) [N]) noexcept
     {
 
       using int_type = decltype (g_test_rand_int ());
+      constexpr auto int_size = sizeof (int_type);
 
-      if constexpr (sizeof (int_type) / N > 0) for (gsize i = 0; i < (sizeof (int_type) / N); ++i)
+      if constexpr (N / int_size > 0) for (gsize i = 0; i < N / int_size; ++i)
         {
-          ((int_type*) ar) [i] = g_test_rand_int ();
+          auto value = g_test_rand_int ();
+          std::memcpy (&ar [i * int_size], &value, int_size);
         }
 
-      if constexpr (sizeof (int_type) % N > 0)
+      if constexpr (N % int_size > 0)
         {
-
-          auto int_ = g_test_rand_int ();
-          std::memcpy (&(((int_type*) ar) [sizeof (int_type) / N]), &int_, sizeof (int_type) % N);
+          auto value = g_test_rand_int ();
+          std::memcpy (&ar [N - N % int_size], &value, N % int_size);
         }
+    }
+
+  static inline void g_test_rand_data (guint8* data, gsize n) noexcept
+    {
+
+      using int_type = decltype (g_test_rand_int ());
+      constexpr auto int_size = sizeof (int_type);
+
+      for (gsize i = 0; i < n / int_size; ++i)
+        {
+          auto value = g_test_rand_int ();
+          std::memcpy (&data [i * int_size], &value, int_size);
+        }
+
+      if (n % int_size > 0)
+        {
+          auto value = g_test_rand_int ();
+          std::memcpy (&data [n - n % int_size], &value, n % int_size);
+        }
+    }
+
+  static inline auto g_test_rand_data (gsize max = 512, gsize min = 2) noexcept
+    {
+
+      struct __data_ptr
+        {
+          guint8* ptr;
+          inline ~__data_ptr () noexcept
+            { if (nullptr != ptr) g_free (ptr); }
+          inline __data_ptr (guint8* ptr_) noexcept: ptr (ptr_) { }
+          inline __data_ptr (__data_ptr&& o) noexcept: ptr (o.ptr) { o.ptr = nullptr; }
+          inline guint8* operator* () const noexcept { return ptr; }
+          inline operator guint8* () const noexcept { return ptr; }
+          inline guint8* steal () noexcept { auto p = ptr; ptr = nullptr; return p; }
+        };
+
+      auto len = (gsize) g_test_rand_int_range (min, 1 + max);
+      auto ptr = (guint8*) g_malloc (sizeof (guint8) * len);
+
+    return std::make_pair (__data_ptr (ptr), len);
     }
 
   static inline guint64 g_test_rand_uint64 () noexcept

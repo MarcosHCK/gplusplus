@@ -68,9 +68,7 @@ public:
       if (G_UNLIKELY (NULL != (*this)))
         g_warning (override_warn, (*this)->message);
 
-      auto ptr = (shared_ptr<GError, details::_g_error_copy, details::_g_error_free>*) &error_;
-
-    return (shared_ptr<GError, details::_g_error_copy, details::_g_error_free>::operator= (*ptr), *this);
+    return (shared_ptr::operator= (static_cast<const shared_ptr&> (error_)), *this);
     }
 
   static inline boxing::error literal (GQuark domain, int code, const char* message)

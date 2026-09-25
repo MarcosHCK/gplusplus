@@ -50,7 +50,7 @@ static inline auto _gioplusplus_asynclib_cpp_error_get_ptr (struct _GError* erro
 {
 
   auto priv = gioplusplus_asynclib_cpp_error_get_private (error);
-  auto eptr = std::exception_ptr (std::move (priv->exception_ptr));
+  auto eptr = std::exception_ptr (priv->exception_ptr);
 return eptr;
 }
 
@@ -66,6 +66,8 @@ return (priv->exception_ptr = exception_ptr, error);
 std::exception_ptr gioplusplus::asynclib::details::error::from_glib_error (GError* error_) noexcept
 {
 
+  g_return_val_if_fail (NULL != error_, std::exception_ptr { });
+
   if (std::exception_ptr ptr; ERROR != error_->domain)
 
     return std::make_exception_ptr (error (error_));
@@ -76,9 +78,11 @@ std::exception_ptr gioplusplus::asynclib::details::error::from_glib_error (GErro
 GError* gioplusplus::asynclib::details::error::to_glib_error (std::exception_ptr ptr) noexcept
 {
 
+  g_return_val_if_fail (nullptr != ptr, NULL);
+
   try
     { std::rethrow_exception (ptr); }
-  catch (boxing::error error)
+  catch (boxing::error& error)
     { return error.release (); }
   catch (...)
     { return _gioplusplus_asynclib_cpp_error_new (std::current_exception ()); }

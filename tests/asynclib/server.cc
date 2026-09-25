@@ -36,7 +36,7 @@ void testing::socket_server::child_setup (gpointer user_data) noexcept
 
 #else // !defined(G_OS_UNIX)
 
-void testing::http_server::child_setup (gpointer user_data) noexcept
+void testing::socket_server::child_setup (gpointer user_data) noexcept
 {
 }
 

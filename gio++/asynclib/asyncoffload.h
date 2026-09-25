@@ -89,8 +89,8 @@ namespace gioplusplus::asynclib
           mutable noexcept (std::is_nothrow_move_constructible_v<Action>) -> void
         {
 
-          boxing::object task = g_task_new (NULL, NULL, callback, user_data);
-          Action* task_data = g_slice_new_<Action> (std::move (action));
+          auto task_data = g_slice_new_<Action> (std::move (action));
+          auto task = boxing::object (g_task_new (NULL, NULL, callback, user_data));
 
           g_task_set_task_data (task, task_data, g_slice_free_<Action>);
 
