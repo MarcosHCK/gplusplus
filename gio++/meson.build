@@ -38,9 +38,18 @@ __gioplusplus_lib = library ('gioplusplus',
               '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
               '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()) ],
   dependencies: [ config_dep, __gioplusplus_ssl ],
-  sources: 'dummy.cc')
+  install: true,
+  soversion: '@0@.@1@'.format (git_version_major, git_version_minor),
+  sources: 'dummy.cc',
+  version: '@0@.@1@.@2@'.format (git_version_major, git_version_minor, git_version_micro))
 
 __gioplusplus_dep = declare_dependency (dependencies: [ gio_dep, glib_dep, gobject_dep ],
   link_with: __gioplusplus_lib)
+
+import ('pkgconfig').generate (__gioplusplus_lib,
+  description: 'C++26 wrapper library around GLib/GIO with coroutine-based async support',
+  filebase: 'gioplusplus',
+  name: 'gioplusplus',
+  requires: [ gio_dep, glib_dep, gobject_dep ])
 
 meson.override_dependency ('gioplusplus', __gioplusplus_dep)

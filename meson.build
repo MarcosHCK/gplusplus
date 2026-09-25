@@ -51,7 +51,8 @@ config.set ('PACKAGE_VERSION_MINOR', git_version_minor)
 config.set ('PACKAGE_VERSION_MICRO', git_version_micro)
 config.set_quoted ('PACKAGE_VERSION_STAGE', git_version_stage)
 
-config_dep = declare_dependency (sources: configure_file (output: 'config.h', configuration: config))
+config_h = configure_file (output: 'config.h', configuration: config)
+config_dep = declare_dependency (sources: config_h)
 config_dep = declare_dependency (dependencies: config_dep, include_directories: include_directories ('.'))
 
 project_build_dir = meson.current_build_dir ()
@@ -124,6 +125,13 @@ subdir ('gio++')
 
 # tests
 subdir ('tests')
+
+########################
+# Installation         #
+########################
+
+install_headers (config_h, subdir: 'gio++')
+install_data ('COPYING', install_dir: get_option ('datadir') / 'licenses' / meson.project_name ())
 
 ########################
 # Summaries            #

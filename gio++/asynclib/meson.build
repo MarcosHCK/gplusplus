@@ -15,24 +15,27 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-__asynclib_headers = [ ]
+__asynclib_headers = [ 'asynclib.h' ]
 __asynclib_sources = [ ]
 
 foreach bit: [ 'asyncfunction', 'asynctask', 'error' ]
-
   __asynclib_headers += [ '@0@.h'.format (bit) ]
   __asynclib_sources += [ '@0@.cc'.format (bit) ]
 endforeach
 
-foreach bit: [ 'begin', 'end' ]
+foreach bit: [ 'asyncoffload' ]
+  __asynclib_headers += [ '@0@.h'.format (bit) ]
+endforeach
 
+foreach bit: [ 'begin', 'end' ]
   __asynclib_headers += [ 'asyncfunction@0@.h'.format (bit) ]
 endforeach
 
 foreach bit: [ 'awaitable', 'awaitablebase', 'coroutine', 'function', 'promise', 'promiseactions' ]
-
   __asynclib_headers += [ 'asynctask@0@.h'.format (bit) ]
 endforeach
+
+install_headers (__asynclib_headers, subdir: 'gio++/asynclib')
 
 __asynclib_lib = static_library ('gioplusplus-asynclib',
   c_args: [ '-DG_LOG_DOMAIN="GIO++.Asynclib"', '-DG_LOG_USE_STRUCTURED=1',

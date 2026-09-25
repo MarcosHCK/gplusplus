@@ -22,7 +22,7 @@ __common_headers = [ ]
 __common_inlines = [ ]
 __common_sources = [ 'dummy.cc' ]
 
-foreach bit: [ 'boxing', 'soo' ]
+foreach bit: [ 'bits', 'boxing', 'hashing', 'slice', 'soo' ]
 
   __common_headers += [ '@0@.h'.format (bit) ]
 endforeach
@@ -36,6 +36,8 @@ foreach bit: [ '', 'dict', 'iter' ]
 
   __common_inlines += [ 'variant@0@.inl'.format (bit) ]
 endforeach
+
+install_headers (__common_headers + __common_inlines, subdir: 'gio++/common')
 
 __common_lib = static_library ('gioplusplus-common',
   c_args: [ '-DG_LOG_DOMAIN="GIO++.Common"', '-DG_LOG_USE_STRUCTURED=1',
