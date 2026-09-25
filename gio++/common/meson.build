@@ -32,6 +32,11 @@ foreach bit: [ 'boxing', 'bytes', 'error', 'freeable', 'object' ]
   __common_inlines += [ '@0@.inl'.format (bit) ]
 endforeach
 
+foreach bit: [ '', 'dict', 'iter' ]
+
+  __common_inlines += [ 'variant@0@.inl'.format (bit) ]
+endforeach
+
 __common_lib = static_library ('gioplusplus-common',
   c_args: [ '-DG_LOG_DOMAIN="GIO++.Common"', '-DG_LOG_USE_STRUCTURED=1',
             '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),

@@ -34,3 +34,29 @@ test ((testpath + '/bytes').replace ('/', '.'),
       env: [ __testing_env,
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ] )
+
+test ((testpath + '/variantdict').replace ('/', '.'),
+      executable ('variantdict',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'variantdict') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'variantdict') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
+            sources: 'variantdict.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()) ], )
+
+test ((testpath + '/variantiter').replace ('/', '.'),
+      executable ('variantiter',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'variantiter') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'variantiter') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
+            sources: 'variantiter.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()) ], )

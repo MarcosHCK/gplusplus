@@ -44,6 +44,7 @@ namespace boxing
   class error;
   template<typename T> class freeable;
   template<typename T> class object;
+  class variant;
 }
 
 template<typename T,
@@ -130,3 +131,6 @@ public:
 #include <gio++/common/error.inl>
 #include <gio++/common/freeable.inl>
 #include <gio++/common/object.inl>
+#include <gio++/common/variant.inl>
+#include <gio++/common/variantdict.inl>
+#include <gio++/common/variantiter.inl>

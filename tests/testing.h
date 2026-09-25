@@ -19,6 +19,7 @@
 #include <cstring>
 #include <exception>
 #include <glib.h>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -88,6 +89,34 @@ namespace testing
                                     #view1 " " #op " " #view2, __str1, #op, __str2); \
           g_free (__str1); g_free (__str2); \
       } \
+  } G_STMT_END
+
+# define g_assert_not_throws(expr) G_STMT_START { \
+ ; \
+    try \
+      { G_STMT_START { expr; } G_STMT_END; } \
+    catch (std::exception& except) \
+      { auto m = std::string (#expr ": ") + except.what (); \
+        g_assertion_message (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, m.c_str ()); } \
+    catch (...) \
+      { auto m = std::string (#expr ": non-exception object"); \
+        g_assertion_message (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, m.c_str ()); } \
+  } G_STMT_END
+
+# define g_assert_throws(type,expr) G_STMT_START { \
+ ; \
+    try \
+      { G_STMT_START { expr; } G_STMT_END; \
+        auto m = std::string (#expr ": did not throw a " #type); \
+        g_assertion_message (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, m.c_str ()); } \
+    catch (type& except) \
+      {  } \
+    catch (std::exception& except) \
+      { auto m = std::string (#expr ": ") + except.what (); \
+        g_assertion_message (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, m.c_str ()); } \
+    catch (...) \
+      { auto m = std::string (#expr ": non-exception object"); \
+        g_assertion_message (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, m.c_str ()); } \
   } G_STMT_END
 
   template<details::__g_test_add_function Fn,
@@ -218,6 +247,37 @@ namespace testing
       auto ptr = (guint8*) g_malloc (sizeof (guint8) * len);
 
     return std::make_pair (__data_ptr (ptr), len);
+    }
+
+  constexpr const gchar ascii_charset [] = "0123456789"
+    "~!@#$%^&*()_+`[]{}\\|//<>.,;:\"' "
+    "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  template<size_t N = G_N_ELEMENTS (ascii_charset)>
+    requires (N < (sizeof (gchar) << CHAR_BIT))
+  static inline auto g_test_rand_cstring (size_t length_max = 128, size_t length_min = 2, const gchar (&charset) [N] = ascii_charset) noexcept
+    {
+
+      auto [ memory, length ] = g_test_rand_data (1 + length_max, 1 + length_min);
+      memory [length - 1] = 0;
+
+      for (decltype (length) i = 0; i < (length - 1); ++i)
+        (*memory) [i] = ascii_charset [memory [i] % (N - 1)];
+
+    return std::make_pair (std::move (memory), length);
+    }
+
+  template<size_t N = G_N_ELEMENTS (ascii_charset)>
+    requires (N < (sizeof (gchar) << CHAR_BIT))
+  static inline std::string g_test_rand_string (size_t length_max = 128, size_t length_min = 2, const gchar (&charset) [N] = ascii_charset) noexcept
+    {
+
+      std::string value (g_test_rand_int_range (length_min, length_max), ' ');
+      g_test_rand_data ((guint8*) &*value.data (), value.size ());
+
+      for (decltype (value.size ()) i = 0; i < value.size (); ++i)
+        ((gchar*) value.data ()) [i] = ascii_charset [((guint8*) value.data ()) [i] % (N - 1)];
+    return value;
     }
 
   static inline guint64 g_test_rand_uint64 () noexcept
