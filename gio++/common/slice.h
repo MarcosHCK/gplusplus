@@ -35,6 +35,9 @@ static inline T* g_slice_new_ (Args&&... args) noexcept (std::is_nothrow_constru
 {
 
   auto mem = g_slice_alloc (sizeof (T));
-  auto ptr = new (mem) T (std::forward<Args> (args) ...);
-return ptr;
+
+  try
+    { return new (mem) T (std::forward<Args> (args) ...); }
+  catch (...)
+    { g_slice_free1 (sizeof (T), mem); throw; }
 }

@@ -62,13 +62,30 @@ public:
     return (shared_ptr<GError, details::_g_error_copy, details::_g_error_free>::operator= (error), *this);
     }
 
+  inline error& operator= (error&& error_) noexcept
+    {
+
+      if (G_UNLIKELY (this != &error_))
+        {
+          if (G_UNLIKELY (NULL != (*this)))
+            g_warning (override_warn, (*this)->message);
+
+          shared_ptr<GError, details::_g_error_copy, details::_g_error_free>::operator= (std::move (error_));
+        }
+    return *this;
+    }
+
   inline error& operator= (const error& error_) noexcept
     {
 
-      if (G_UNLIKELY (NULL != (*this)))
-        g_warning (override_warn, (*this)->message);
+      if (G_UNLIKELY (this != &error_))
+        {
+          if (G_UNLIKELY (NULL != (*this)))
+            g_warning (override_warn, (*this)->message);
 
-    return (shared_ptr::operator= (static_cast<const shared_ptr&> (error_)), *this);
+          shared_ptr<GError, details::_g_error_copy, details::_g_error_free>::operator= (static_cast<const shared_ptr&> (error_));
+        }
+    return *this;
     }
 
   static inline boxing::error literal (GQuark domain, int code, const char* message)

@@ -75,18 +75,31 @@ public:
     }
 };
 
+namespace gioplusplus::asynclib::details
+{
+
+  template<typename T>
+  concept can_forward = (std::is_lvalue_reference_v<T> && std::copy_constructible<T>)
+                     || (! std::is_lvalue_reference_v<T> && std::move_constructible<T>);
+}
+
 namespace gioplusplus::asynclib
 {
 
   template<typename Action>
-    requires (std::is_invocable_v<Action>)
+    requires (std::is_invocable_v<Action> && details::can_forward<Action>)
   static inline constexpr auto offload (Action&& action) noexcept (std::is_nothrow_constructible_v<Action, Action>)
     {
 
       using return_type = std::invoke_result_t<Action>;
 
+      /* NOTE: begin is not intended to run multiple times; it runs exactly *ONCE*. Any other situation
+       * where begin is called zero or more than one times will lead to leaks or undefined behavior
+       */
+
       auto begin = [action = std::forward<Action> (action)] (GAsyncReadyCallback callback, gpointer user_data)
-          mutable noexcept (std::is_nothrow_move_constructible_v<Action>) -> void
+          mutable noexcept ((std::is_lvalue_reference_v<Action> && std::is_nothrow_copy_constructible_v<Action>)
+                         || (std::is_rvalue_reference_v<Action> && std::is_nothrow_move_constructible_v<Action>)) -> void
         {
 
           auto task_data = g_slice_new_<Action> (std::forward<Action> (action));

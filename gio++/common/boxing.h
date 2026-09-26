@@ -34,6 +34,7 @@ namespace boxing
   template<typename T,
            details::_copy_func<T> auto _copy_func = nullptr,
            details::_free_func<T> auto _free_func = nullptr>
+     requires (nullptr != _copy_func)
   class shared_ptr;
 
   template<typename T,
@@ -74,6 +75,7 @@ struct boxing::function_deleter
 template<typename T,
          boxing::details::_copy_func<T> auto _copy_func,
          boxing::details::_free_func<T> auto _free_func>
+   requires (nullptr != _copy_func)
 class boxing::shared_ptr: public std::unique_ptr<T, boxing::function_deleter<T, _free_func>>
 {
 public:
@@ -85,10 +87,10 @@ public:
   inline constexpr shared_ptr (shared_ptr<T, _copy_func, _free_func>&& o)
       noexcept (std::is_nothrow_move_constructible_v<std::unique_ptr<T, boxing::function_deleter<T, _free_func>>>):
       std::unique_ptr<T, boxing::function_deleter<T, _free_func>> ((std::unique_ptr<T, boxing::function_deleter<T, _free_func>>&&) std::move (o))
-    { o.reset (); }
+    { }
 
-  inline constexpr shared_ptr (const shared_ptr& o) noexcept (std::is_nothrow_invocable_r_v<T*, decltype (_copy_func), T*>):
-      std::unique_ptr<T, boxing::function_deleter<T, _free_func>> (_copy_func (o.get ()))
+  inline constexpr shared_ptr (const shared_ptr& o) noexcept (std::is_nothrow_invocable_r_v<T*, decltype (_copy_func), T*>)
+      : std::unique_ptr<T, boxing::function_deleter<T, _free_func>> (_copy_func (o.get ()))
     { }
 
   inline constexpr T* operator* () const noexcept { return this->get (); }
@@ -98,6 +100,12 @@ public:
     {
       shared_ptr<T, _copy_func, _free_func> tmp (o);
     return (this->swap (tmp), *this);
+    }
+
+  inline constexpr auto& operator= (shared_ptr<T, _copy_func, _free_func>&& o) noexcept (std::is_nothrow_move_assignable_v<std::unique_ptr<T, boxing::function_deleter<T, _free_func>>>)
+    {
+      std::unique_ptr<T, boxing::function_deleter<T, _free_func>>::operator= (std::move (o));
+    return *this;
     }
 
 protected:
@@ -121,7 +129,7 @@ public:
   inline constexpr unique_ptr (unique_ptr<T, _free_func>&& o)
       noexcept (std::is_nothrow_move_constructible_v<std::unique_ptr<T, boxing::function_deleter<T, _free_func>>>):
       std::unique_ptr<T, boxing::function_deleter<T, _free_func>> ((std::unique_ptr<T, boxing::function_deleter<T, _free_func>>&&) std::move (o))
-    { o.reset (); }
+    { }
 
   inline constexpr T* operator* () const noexcept { return this->get (); }
   inline constexpr operator T* () const noexcept { return this->get (); }

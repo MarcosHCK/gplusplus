@@ -71,7 +71,7 @@ namespace soo_ptr
           try
             { return new (*location) T (std::forward<Args> (args) ...); }
           catch (...)
-            { Free (sizeof (T), *location); throw; }
+            { Free (sizeof (T), *location); *location = nullptr; throw; }
         }
     }
 

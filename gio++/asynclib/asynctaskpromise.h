@@ -98,20 +98,42 @@ namespace gioplusplus::asynclib::details
   struct async_task_promise: public async_task_promise_completable<Return>
     {
 
+      template<typename promise_type> struct __coroutine_handle_guard
+        {
+
+          std::coroutine_handle<promise_type> handle = nullptr;
+
+          inline ~__coroutine_handle_guard ()
+            { ((nullptr == handle) ? nullptr : (handle = (handle.destroy (), nullptr))); }
+
+          inline __coroutine_handle_guard (__coroutine_handle_guard&& o) noexcept: handle (o.handle)
+            { o.handle = nullptr; }
+
+          __coroutine_handle_guard (const __coroutine_handle_guard&) = delete;
+
+          inline __coroutine_handle_guard (std::coroutine_handle<promise_type> _handle) noexcept: handle (_handle)
+            { }
+
+          inline void resume () noexcept (std::is_nothrow_invocable_v<decltype (&std::coroutine_handle<promise_type>::resume)>)
+            { ((nullptr == handle) ? nullptr : (handle = (handle.resume (), nullptr))); }
+        };
+
       static constexpr auto _Begin = async_task_promise_base::begin_mock;
       static constexpr auto _End = async_task_promise_completable<Return>::fulfill;
-      using task_type = async_task<_Begin, _End, Functor>;
 
       inline constexpr async_task<_Begin, _End, Functor> get_return_object () noexcept
         {
 
-          auto begin = [this] (GAsyncReadyCallback callback, gpointer user_data) -> void
+          using task_type = async_task<_Begin, _End, Functor>;
+          using promise_type = typename std::coroutine_traits<task_type, Args ...>::promise_type;
+
+          auto handle = std::coroutine_handle<promise_type>::from_promise ((promise_type&) *this);
+          auto guard = __coroutine_handle_guard<promise_type> (handle);
+
+          auto begin = [this, guard = std::move (guard)] (GAsyncReadyCallback callback, gpointer user_data) mutable -> void
             {
-
               this->_task = g_task_new (NULL, NULL, callback, user_data);
-
-              using promise_type = typename std::coroutine_traits<async_task<_Begin, _End, Functor>, Args ...>::promise_type;
-              std::coroutine_handle<promise_type>::from_promise ((promise_type&) *this).resume ();
+              guard.resume ();
             };
         return async_task<_Begin, _End, Functor> (std::move (begin));
         }

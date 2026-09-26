@@ -42,7 +42,7 @@ if get_option ('b_sanitize') == 'address,undefined' or get_option ('b_sanitize')
 
   # Work around an upstream GLib happy-eyeballs leak (see glib.supp) so the
   # sanitizer gate stays green without distorting the plain-GLib baseline.
-  __testing_env += [ 'LSAN_OPTIONS=suppressions=@0@'.format (meson.current_source_dir () / '..' / 'glib.supp') ]
+  __testing_env += [ 'LSAN_OPTIONS=suppressions=@0@'.format (meson.current_source_dir () / 'glib.supp') ]
 endif
 
 subdir ('asynclib')

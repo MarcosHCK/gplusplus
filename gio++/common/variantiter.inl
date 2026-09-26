@@ -74,6 +74,7 @@ public:
 
   inline variant_iter& operator= (const variant_iter& o) noexcept
     {
+      _curr = o._curr;
       std::memcpy (&_iter, &o._iter, sizeof (GVariantIter));
     return *this;
     }

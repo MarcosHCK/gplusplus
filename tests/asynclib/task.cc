@@ -101,6 +101,38 @@ static gioplusplus::asynclib::task<int> unwraps_small (int value)
 co_return * result.owned;
 }
 
+struct private_error: std::exception
+{
+  inline const char* what () const noexcept override { return "private failure"; }
+};
+
+static gioplusplus::asynclib::task<int> offload_void_echo (int value)
+{
+  co_await gioplusplus::asynclib::offload ([value] () noexcept { g_usleep (1000); });
+co_return value;
+}
+
+static gioplusplus::asynclib::task<int> offload_value_multiply (int value)
+{
+co_return (co_await gioplusplus::asynclib::offload ([value] () noexcept { return value * 3; }));
+}
+
+static gioplusplus::asynclib::task<int> offload_catch_throw ()
+{
+  try
+    { co_await gioplusplus::asynclib::offload ([] () -> int { throw private_error (); }); }
+  catch (const private_error&)
+    { co_return 77; }
+co_return 0;
+}
+
+static gioplusplus::asynclib::task<std::string> offload_large_string ()
+{
+  auto result = co_await gioplusplus::asynclib::offload ([] () noexcept
+    { return std::string ("a large payload returned through the SOO heap path"); });
+co_return result;
+}
+
 int main (int argc, char* argv[])
 {
 
@@ -292,6 +324,184 @@ int main (int argc, char* argv[])
 
       g_assert_cmpint (11, ==, data.result);
       (void) rand;
+    });
+
+  g_test_add_action (TESTPATHROOT "/error/roundtrip/custom", []
+    {
+
+      /* a non-GError C++ exception survives the round trip through a GError
+       * of the extended "C++ exception" domain, preserving its type */
+      auto exception = std::make_exception_ptr (private_error ());
+      auto glib_error = gioplusplus::asynclib::details::error::to_glib_error (exception);
+
+      g_assert_nonnull (glib_error);
+      g_assert_cmpstr (glib_error->message, ==, "c++ exception thrown");
+
+      auto recovered = gioplusplus::asynclib::details::error::from_glib_error (glib_error);
+      g_assert_true (nullptr != recovered);
+
+      bool caught = false;
+      try
+        { std::rethrow_exception (recovered); }
+      catch (const private_error&)
+        { caught = true; }
+      g_assert_true (caught);
+    });
+
+  g_test_add_action (TESTPATHROOT "/error/roundtrip/glib", []
+    {
+
+      /* a boxing::error survives the round trip too: the GError is
+       * transferred as-is, carrying its domain, code and message */
+      auto error = boxing::error::literal (G_IO_ERROR, G_IO_ERROR_TIMED_OUT, "timed out");
+      auto glib_error = gioplusplus::asynclib::details::error::to_glib_error (std::make_exception_ptr (error));
+
+      g_assert_nonnull (glib_error);
+      g_assert_cmpuint (glib_error->domain, ==, G_IO_ERROR);
+      g_assert_cmpint (glib_error->code, ==, G_IO_ERROR_TIMED_OUT);
+      g_assert_cmpstr (glib_error->message, ==, "timed out");
+
+      auto recovered = gioplusplus::asynclib::details::error::from_glib_error (glib_error);
+
+      bool caught = false;
+      try
+        { std::rethrow_exception (recovered); }
+      catch (const boxing::error& e)
+        {
+          g_assert_cmpuint (e->domain, ==, G_IO_ERROR);
+          g_assert_cmpint (e->code, ==, G_IO_ERROR_TIMED_OUT);
+          g_assert_cmpstr (e->message, ==, "timed out");
+          caught = true;
+        }
+      g_assert_true (caught);
+    });
+
+  g_test_add_action (TESTPATHROOT "/execute/user_data", []
+    {
+
+      /* the user_data pointer passed to begin() must reach the ready callback
+       * unchanged (it travels through the GTask completion machinery) */
+      auto rand = g_test_rand_int ();
+      auto task = simple (rand);
+
+      struct D { guint ready; gpointer got; int result; }
+        data = { .ready = 0, .got = nullptr, .result = 0, };
+
+      task.begin ([](GObject*, GAsyncResult* async_result, gpointer user_data)
+        {
+          auto p = (D*) user_data;
+          p->got = user_data;
+
+          auto e = (GError*) nullptr;
+          p->result = gioplusplus::asynclib::task_function_finish<simple> (async_result, &e);
+          g_assert_no_error (e);
+          g_atomic_int_set (&p->ready, 1);
+        }, &data);
+
+      for (auto main_context = g_main_context_get_thread_default (); 0 == g_atomic_int_get (&data.ready);)
+        g_main_context_iteration (main_context, FALSE);
+
+      g_assert_cmpuint ((guintptr) data.got, ==, (guintptr) &data);
+      g_assert_cmpint (0, ==, rand ^ data.result);
+    });
+
+  g_test_add_action (TESTPATHROOT "/execute/offload/void", []
+    {
+
+      auto rand = g_test_rand_int ();
+      auto task = offload_void_echo (rand);
+
+      struct D { guint ready; int result; }
+        data = { .ready = 0, .result = 0, };
+
+      task.begin ([](GObject*, GAsyncResult* async_result, gpointer user_data)
+        {
+          auto p = (D*) user_data;
+          auto e = (GError*) nullptr;
+          p->result = gioplusplus::asynclib::task_function_finish<offload_void_echo> (async_result, &e);
+          g_assert_no_error (e);
+          g_atomic_int_set (&p->ready, 1);
+        }, &data);
+
+      for (auto main_context = g_main_context_get_thread_default (); 0 == g_atomic_int_get (&data.ready);)
+        g_main_context_iteration (main_context, FALSE);
+
+      g_assert_cmpint (rand, ==, data.result);
+    });
+
+  g_test_add_action (TESTPATHROOT "/execute/offload/multiply", []
+    {
+
+      /* keep the factor small so value * 3 cannot overflow a signed int */
+      auto rand = (int) g_test_rand_int_range (-1000000, 1000000);
+      auto task = offload_value_multiply (rand);
+
+      struct D { guint ready; int result; }
+        data = { .ready = 0, .result = 0, };
+
+      task.begin ([](GObject*, GAsyncResult* async_result, gpointer user_data)
+        {
+          auto p = (D*) user_data;
+          auto e = (GError*) nullptr;
+          p->result = gioplusplus::asynclib::task_function_finish<offload_value_multiply> (async_result, &e);
+          g_assert_no_error (e);
+          g_atomic_int_set (&p->ready, 1);
+        }, &data);
+
+      for (auto main_context = g_main_context_get_thread_default (); 0 == g_atomic_int_get (&data.ready);)
+        g_main_context_iteration (main_context, FALSE);
+
+      g_assert_cmpint (3 * rand, ==, data.result);
+    });
+
+  g_test_add_action (TESTPATHROOT "/execute/offload/throws", []
+    {
+
+      /* an exception thrown inside the offloaded action crosses the GTask
+       * boundary and is rethrown (with its type) on the awaiting side */
+      auto task = offload_catch_throw ();
+
+      struct D { guint ready; int result; }
+        data = { .ready = 0, .result = 0, };
+
+      task.begin ([](GObject*, GAsyncResult* async_result, gpointer user_data)
+        {
+          auto p = (D*) user_data;
+          auto e = (GError*) nullptr;
+          p->result = gioplusplus::asynclib::task_function_finish<offload_catch_throw> (async_result, &e);
+          g_assert_no_error (e);
+          g_atomic_int_set (&p->ready, 1);
+        }, &data);
+
+      for (auto main_context = g_main_context_get_thread_default (); 0 == g_atomic_int_get (&data.ready);)
+        g_main_context_iteration (main_context, FALSE);
+
+      g_assert_cmpint (77, ==, data.result);
+    });
+
+  g_test_add_action (TESTPATHROOT "/execute/offload/large", []
+    {
+
+      /* a value larger than a pointer travels through the SOO heap path of the
+       * task result machinery without leaks or dangling copies */
+      auto task = offload_large_string ();
+
+      struct D { guint ready; std::string result; }
+        data = { .ready = 0, .result = std::string (), };
+
+      task.begin ([](GObject*, GAsyncResult* async_result, gpointer user_data)
+        {
+          auto p = (D*) user_data;
+          auto e = (GError*) nullptr;
+          p->result = gioplusplus::asynclib::task_function_finish<offload_large_string> (async_result, &e);
+          g_assert_no_error (e);
+          g_atomic_int_set (&p->ready, 1);
+        }, &data);
+
+      for (auto main_context = g_main_context_get_thread_default (); 0 == g_atomic_int_get (&data.ready);)
+        g_main_context_iteration (main_context, FALSE);
+
+      g_assert_cmpstr (data.result.c_str (), ==, "a large payload returned through the SOO heap path");
     });
 
 return g_test_run ();

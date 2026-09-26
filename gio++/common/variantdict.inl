@@ -31,10 +31,10 @@ public:
   typedef const variant_iter const_iterator;
   typedef variant_iter iterator;
   typedef const variant mapped_type;
-  typedef const std::pair<key_type, mapped_type>& const_reference;
-  typedef std::pair<key_type, mapped_type>& reference;
+  typedef const variant& const_reference;
+  typedef const variant& reference;
   typedef gsize size_type;
-  typedef std::pair<key_type, mapped_type> value_type;
+  typedef const variant value_type;
 
   inline ~variant_dict () noexcept
     {
@@ -76,13 +76,19 @@ public:
 
   inline bool operator== (const variant_dict& o) const noexcept
     {
-    return _cont == o._cont || 0 == g_variant_compare (_cont, o._cont);
+
+      /* NOTE: g_variant_compare() cannot be used here: it is only defined for
+       * non-container types and would emit a GLib critical warning (and return
+       * 0) for a{sv} dicts, making unequal dicts compare as equal. */
+      auto a = _cont.get ();
+      auto b = o._cont.get ();
+    return (nullptr == a || nullptr == b) ? a == b : g_variant_equal (a, b);
     }
 
-  inline mapped_type at (const key_type& key, GVariantType* expected_vtype = nullptr)
+  inline mapped_type at (const key_type& key, const GVariantType* expected_vtype = nullptr) const
     {
 
-      if (auto v = g_variant_dict_lookup_value (&_dict, key, expected_vtype); nullptr != v)
+      if (auto v = g_variant_dict_lookup_value (const_cast<GVariantDict*> (&_dict), key, expected_vtype); nullptr != v)
 
         return v;
       else

@@ -39,10 +39,10 @@ public:
 
   template<typename Other>
     requires std::same_as<boxing::bytes, Other>
-  inline bool operator== (const Other& bytes) const noexcept
+  inline bool operator== (const Other& o) const noexcept
     {
       auto a = get ();
-      auto b = bytes.get ();
+      auto b = o.get ();
     return (nullptr == a || nullptr == b) ? a == b : g_bytes_equal (a, b);
     }
 
