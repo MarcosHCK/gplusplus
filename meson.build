@@ -94,8 +94,10 @@ if cc.get_id () == 'gcc' or cc.get_id () == 'clang'
     # We explicitly require variadic macros
     '-Wno-variadic-macros',
     '-Wnonnull',
+    '-Wnull-pointer-arithmetic',
     '-Wshadow',
     '-Wstrict-prototypes',
+    '-Wsubobject-linkage',
     '-Wunused',
     '-Wunused-function',
     '-Wunused-label',

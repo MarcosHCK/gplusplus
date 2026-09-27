@@ -27,15 +27,26 @@ namespace boxing
 namespace boxing::details
 {
 
-  static GVariant* _g_variant_ref (GVariant* variant) noexcept
-    { return NULL == variant ? NULL : g_variant_ref (variant); }
+  GVariant* _g_variant_ref (GVariant* variant) noexcept;
 }
 
 class boxing::variant: public boxing::shared_ptr<GVariant, details::_g_variant_ref, g_variant_unref>
 {
+
+  typedef struct _null_variant_tag { } null_variant_tag;
+
 public:
 
-  inline variant (GVariant* variant = nullptr) noexcept:
-      shared_ptr<GVariant, details::_g_variant_ref, g_variant_unref> (variant)
-    { if (nullptr != variant) g_variant_take_ref (variant); }
+  variant (GVariant* variant = nullptr) noexcept;
+
+  static constexpr variant null () noexcept
+    {
+      return variant (null_variant_tag { });
+    }
+
+private:
+
+  inline constexpr variant (null_variant_tag) noexcept:
+      boxing::shared_ptr<GVariant, details::_g_variant_ref, g_variant_unref> (nullptr)
+    { }
 };

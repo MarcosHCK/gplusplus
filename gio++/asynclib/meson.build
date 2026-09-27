@@ -47,5 +47,5 @@ __asynclib_lib = static_library ('gioplusplus-asynclib',
   dependencies: [ config_dep, gio_dep ],
   sources: [ __asynclib_headers, __asynclib_sources ])
 
-__asynclib_dep = declare_dependency (dependencies: gio_dep,
+__asynclib_dep = declare_dependency (dependencies: [ gio_dep, __common_dep ],
   link_with: __asynclib_lib)

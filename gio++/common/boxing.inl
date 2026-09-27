@@ -27,9 +27,6 @@ namespace boxing::details
   template<typename F, typename T>
   concept _free_func = std::is_invocable_r_v<void, F, T*> || std::is_same_v<F, std::nullptr_t>;
 
-  static GBytes* _g_bytes_ref (GBytes* bytes) noexcept
-    { return NULL == bytes ? NULL : g_bytes_ref (bytes); }
-
   template<typename T>
   static void _g_free (T* object) noexcept { return g_free ((void*) object); }
 

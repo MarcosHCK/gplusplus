@@ -20,88 +20,25 @@
 namespace boxing::details
 {
 
-  static GError* _g_error_copy (GError* error) noexcept
-    {
-      return NULL == error ? NULL : g_error_copy (error);
-    }
-
-  static void _g_error_free (GError* error) noexcept
-    {
-      if (G_LIKELY (NULL != error))
-        g_error_free (error);
-    }
+  GError* _g_error_copy (GError* error) noexcept;
+  void _g_error_free (GError* error) noexcept;
 }
 
 class boxing::error: public boxing::shared_ptr<GError, boxing::details::_g_error_copy, boxing::details::_g_error_free>
 {
-
-  static constexpr const gchar* override_warn =
-    "GError set over the top of a previous GError or uninitialized memory.\n" \
-    "This indicates a bug in someone's code. You must ensure an error is NULL before it's set.\n" \
-    "The overwriting error message was: %s";
-
 public:
 
-  inline error (GError* error = nullptr) noexcept:
-      shared_ptr<GError, details::_g_error_copy, details::_g_error_free> (error)
-    { }
+  error (GError* error = nullptr) noexcept;
+  error (error&& o) noexcept;
+  error (const error& o) noexcept;
 
-  inline error (error&& o) noexcept:
-      shared_ptr<GError, details::_g_error_copy, details::_g_error_free> (std::move (o))
-    { }
+  error& operator= (GError* error) noexcept;
+  error& operator= (error&& error_) noexcept;
+  error& operator= (const error& error_) noexcept;
 
-  inline error (const error& o) noexcept:
-      shared_ptr<GError, details::_g_error_copy, details::_g_error_free> (copy (o.get ()))
-    { }
+  static boxing::error literal (GQuark domain, int code, const char* message)
+      noexcept (std::is_nothrow_constructible_v<error, GError*>);
 
-  inline error& operator= (GError* error) noexcept
-    {
-
-      if (G_UNLIKELY (NULL != (*this)))
-        g_warning (override_warn, (*this)->message);
-    return (shared_ptr<GError, details::_g_error_copy, details::_g_error_free>::operator= (error), *this);
-    }
-
-  inline error& operator= (error&& error_) noexcept
-    {
-
-      if (G_UNLIKELY (this != &error_))
-        {
-          if (G_UNLIKELY (NULL != (*this)))
-            g_warning (override_warn, (*this)->message);
-
-          shared_ptr<GError, details::_g_error_copy, details::_g_error_free>::operator= (std::move (error_));
-        }
-    return *this;
-    }
-
-  inline error& operator= (const error& error_) noexcept
-    {
-
-      if (G_UNLIKELY (this != &error_))
-        {
-          if (G_UNLIKELY (NULL != (*this)))
-            g_warning (override_warn, (*this)->message);
-
-          shared_ptr<GError, details::_g_error_copy, details::_g_error_free>::operator= (static_cast<const shared_ptr&> (error_));
-        }
-    return *this;
-    }
-
-  static inline boxing::error literal (GQuark domain, int code, const char* message)
-      noexcept (std::is_nothrow_constructible_v<error, GError*>)
-    {
-      return error (g_error_new_literal (domain, code, message));
-    }
-
-  static inline boxing::error printf (GQuark domain, int code, const char* format, ...)
-      noexcept (std::is_nothrow_constructible_v<error, GError*>) G_GNUC_PRINTF (3, 4)
-    {
-
-      va_list l;
-      va_start (l, format);
-
-      auto error_ = error (g_error_new_valist (domain, code, format, l));
-    return (va_end (l), error_);
-    }
+  static boxing::error printf (GQuark domain, int code, const char* format, ...)
+      noexcept (std::is_nothrow_constructible_v<error, GError*>) G_GNUC_PRINTF (3, 4);
 };

@@ -87,3 +87,8 @@ GError* gioplusplus::asynclib::details::error::to_glib_error (std::exception_ptr
   catch (...)
     { return _gioplusplus_asynclib_cpp_error_new (std::current_exception ()); }
 }
+
+const char* gioplusplus::asynclib::details::error::what () const _GLIBCXX_TXN_SAFE_DYN noexcept
+{
+  return nullptr == get () ? "" : get ()->message;
+}

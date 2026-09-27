@@ -17,25 +17,19 @@
 #pragma once
 #include <cstring>
 #include <gio++/common/boxing.h>
-#include <gio++/common/hashing.h>
+
+namespace boxing::details
+{
+
+  GBytes* _g_bytes_ref (GBytes* bytes) noexcept;
+}
 
 class boxing::bytes: public shared_ptr<GBytes, details::_g_bytes_ref, g_bytes_unref>
 {
 public:
 
-  inline constexpr bytes (GBytes* value = nullptr) noexcept:
-      shared_ptr<GBytes, details::_g_bytes_ref, g_bytes_unref> (value)
-    { }
-
-  inline std::pair<const void*, size_t> data () const noexcept
-    {
-
-      GBytes* bytes;
-
-      auto size = (gsize) 0;
-      auto data = NULL == (bytes = *this) ? NULL : g_bytes_get_data (bytes, &size);
-    return { data, size };
-    }
+  bytes (GBytes* value = nullptr) noexcept;
+  std::pair<const void*, size_t> data () const noexcept;
 
   template<typename Other>
     requires std::same_as<boxing::bytes, Other>
@@ -59,10 +53,5 @@ template<> struct std::hash<boxing::bytes>
 {
 public:
 
-  inline constexpr std::size_t operator() (boxing::bytes bytes) const noexcept
-    {
-      auto [ data, size ] = bytes.data ();
-      auto hash = hashing::fnv_1a<std::size_t, std::uint8_t> (std::span ((const std::uint8_t*) data, size));
-    return hash;
-    };
+  std::size_t operator() (boxing::bytes bytes) const noexcept;
 };

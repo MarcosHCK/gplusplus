@@ -15,8 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include <config.h>
-#include <gio++/common/bits.h>
 #include <gio++/common/boxing.h>
-#include <gio++/common/hashing.h>
-#include <gio++/common/slice.h>
-#include <gio++/common/soo.h>
+using namespace boxing;
+
+namespace boxing::details
+{
+
+  GVariant* _g_variant_ref (GVariant* variant) noexcept
+    {
+      return NULL == variant ? NULL : g_variant_ref (variant);
+    }
+}
+
+variant::variant (GVariant* variant) noexcept: shared_ptr<GVariant, details::_g_variant_ref, g_variant_unref> (variant)
+{
+  if (nullptr != variant)
+    g_variant_take_ref (variant);
+}

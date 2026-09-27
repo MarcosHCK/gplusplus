@@ -18,7 +18,6 @@
 #include <gio++/common/boxing.h>
 #include <gio++/common/variantiter.inl>
 #include <glib.h>
-#include <utility>
 
 class boxing::variant_dict
 {
@@ -36,62 +35,22 @@ public:
   typedef gsize size_type;
   typedef const variant value_type;
 
-  inline ~variant_dict () noexcept
-    {
-      g_variant_dict_clear (&_dict);
-    }
+  ~variant_dict () noexcept;
+  variant_dict (GVariant* variant);
 
-  inline variant_dict (GVariant* variant): _cont (g_variant_ref_sink (variant)),
-                                           _dict (G_VARIANT_DICT_INIT (variant))
-    {
-
-      if (G_UNLIKELY (NULL == variant))
-        {
-          throw std::runtime_error ("invalid variant (null)");
-        }
-
-      const auto etype = G_VARIANT_TYPE ("a{sv}");
-      const auto vtype = g_variant_get_type (variant);
-
-      if (G_UNLIKELY (FALSE == g_variant_type_equal (etype, vtype)))
-        {
-
-          const auto str_b = g_variant_type_peek_string (vtype);
-          const auto str_l = g_variant_type_get_string_length (vtype);
-
-          throw std::runtime_error (std::string ("invalid variant type '") + std::string_view (str_b, str_l) + "'");
-        }
-    }
-
-  inline const_iterator begin () const noexcept { return const_iterator (_cont); }
-  inline iterator begin () noexcept { return iterator (_cont); }
-  inline const_iterator cbegin () const noexcept { return const_iterator (_cont); }
-
-  inline const_iterator end () const noexcept { return const_iterator (); }
-  inline iterator end () noexcept { return iterator (); }
-  inline const_iterator cend () const noexcept { return const_iterator (); }
+  inline const variant_iter begin () const noexcept { return const_iterator (_cont); }
+  inline variant_iter begin () noexcept { return iterator (_cont); }
+  inline const variant_iter cbegin () const noexcept { return const_iterator (_cont); }
 
   inline bool empty () const noexcept { return 0 == size (); }
+
+  inline const variant_iter end () const noexcept { return const_iterator (); }
+  inline variant_iter end () noexcept { return iterator (); }
+  inline const variant_iter cend () const noexcept { return const_iterator (); }
+
   inline size_type size () const noexcept { return g_variant_n_children (_cont); }
 
-  inline bool operator== (const variant_dict& o) const noexcept
-    {
+  mapped_type at (const key_type& key, const GVariantType* expected_vtype = nullptr) const;
 
-      /* NOTE: g_variant_compare() cannot be used here: it is only defined for
-       * non-container types and would emit a GLib critical warning (and return
-       * 0) for a{sv} dicts, making unequal dicts compare as equal. */
-      auto a = _cont.get ();
-      auto b = o._cont.get ();
-    return (nullptr == a || nullptr == b) ? a == b : g_variant_equal (a, b);
-    }
-
-  inline mapped_type at (const key_type& key, const GVariantType* expected_vtype = nullptr) const
-    {
-
-      if (auto v = g_variant_dict_lookup_value (const_cast<GVariantDict*> (&_dict), key, expected_vtype); nullptr != v)
-
-        return v;
-      else
-        throw std::out_of_range (key);
-    }
+  bool operator== (const variant_dict& o) const noexcept;
 };

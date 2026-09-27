@@ -16,6 +16,7 @@
  */
 #include <config.h>
 #include <gio++/asynclib/asynclib.h>
+#include <gio++/common/bits.h>
 #include <tests/testing.h>
 using namespace testing;
 

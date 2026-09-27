@@ -24,6 +24,8 @@ class boxing::variant_iter
 
   variant _curr;
   GVariantIter _iter;
+
+  static constexpr auto null_variant = variant::null ();
 public:
 
   typedef std::ptrdiff_t difference_type;
@@ -33,72 +35,27 @@ public:
 
   using iterator_category = std::input_iterator_tag;
 
-  inline variant_iter () noexcept: _curr (nullptr), _iter ({ })
+  inline constexpr variant_iter () noexcept: _curr (null_variant), _iter ({})
+    { }
+
+  variant_iter (GVariant* variant);
+
+  inline variant_iter (const variant_iter& o) noexcept: _curr (o._curr), _iter (o._iter)
+    { }
+
+  inline const variant& operator* () const noexcept
     {
-    }
-
-  inline variant_iter (GVariant* variant): variant_iter ()
-    {
-
-      if (G_UNLIKELY (NULL == variant))
-        {
-
-          throw std::runtime_error ("invalid variant (null)");
-        }
-
-      const auto vtype = g_variant_get_type (variant);
-
-      if (G_UNLIKELY (FALSE == g_variant_type_is_container (vtype)))
-        {
-
-          const auto str_b = g_variant_type_peek_string (vtype);
-          const auto str_l = g_variant_type_get_string_length (vtype);
-
-          throw std::runtime_error (std::string ("invalid variant type '") + std::string_view (str_b, str_l) + "'");
-        }
-
-      g_variant_iter_init (&_iter, variant);
-
-      _curr = g_variant_iter_next_value (&_iter);
-    }
-
-  inline variant_iter (const variant_iter& o) noexcept: _curr (o._curr)
-    {
-      std::memcpy (&_iter, &o._iter, sizeof (GVariantIter));
-    }
-
-  inline variant operator* () const noexcept
-    {
-    return nullptr != _curr ? _curr : variant ();
+      return nullptr != _curr ? _curr : null_variant;
     }
 
   inline variant_iter& operator= (const variant_iter& o) noexcept
     {
       _curr = o._curr;
-      std::memcpy (&_iter, &o._iter, sizeof (GVariantIter));
+      _iter = o._iter;
     return *this;
     }
 
-  inline variant_iter& operator++ () noexcept
-    {
-      _curr = g_variant_iter_next_value (&_iter);
-    return *this;
-    }
-
-  inline variant_iter operator++ (int) noexcept
-    {
-      auto n = *this;
-      _curr = g_variant_iter_next_value (&_iter);
-    return n;
-    }
-
-  inline bool operator== (const variant_iter& o) const noexcept
-    {
-
-      if (_curr == o._curr)
-
-        return true;
-      else
-        return 0 == std::memcmp (&_iter, &o._iter, sizeof (GVariantIter));
-    }
+  variant_iter& operator++ () noexcept;
+  variant_iter operator++ (int) noexcept;
+  bool operator== (const variant_iter& o) const noexcept;
 };

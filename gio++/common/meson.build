@@ -20,7 +20,7 @@ gobject_dep = dependency ('gobject-2.0', required: true)
 
 __common_headers = [ ]
 __common_inlines = [ ]
-__common_sources = [ 'dummy.cc' ]
+__common_sources = [ 'bytes.cc', 'error.cc', 'variant.cc', 'variantiter.cc', 'variantdict.cc' ]
 
 foreach bit: [ 'bits', 'boxing', 'hashing', 'slice', 'soo' ]
 
