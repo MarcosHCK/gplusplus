@@ -16,8 +16,8 @@
 ;
 
 [binaries]
-c = 'clang-21'
-cpp = 'clang++-21'
+c = 'clang-22'
+cpp = 'clang++-22'
 
 ; [built-in options]
 ; cpp_args = [ '-stdlib=libc++' ]
