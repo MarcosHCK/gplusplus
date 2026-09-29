@@ -20,21 +20,19 @@ gobject_dep = dependency ('gobject-2.0', required: true)
 
 __common_headers = [ ]
 __common_inlines = [ ]
-__common_sources = [ 'bytes.cc', 'error.cc', 'variant.cc', 'variantiter.cc', 'variantdict.cc' ]
+__common_sources = [ ]
 
 foreach bit: [ 'bits', 'boxing', 'hashing', 'slice', 'soo' ]
-
   __common_headers += [ '@0@.h'.format (bit) ]
 endforeach
 
-foreach bit: [ 'boxing', 'bytes', 'error', 'freeable', 'object' ]
-
+foreach bit: [ 'boxing', 'freeable', 'object' ] 
   __common_inlines += [ '@0@.inl'.format (bit) ]
 endforeach
 
-foreach bit: [ '', 'dict', 'iter' ]
-
-  __common_inlines += [ 'variant@0@.inl'.format (bit) ]
+foreach bit: [ 'bytes', 'error', 'variant', 'variantdict', 'variantiter' ]
+  __common_inlines += [ '@0@.inl'.format (bit) ]
+  __common_sources += [ '@0@.cc'.format (bit) ]
 endforeach
 
 install_headers (__common_headers + __common_inlines, subdir: 'gio++/common')
