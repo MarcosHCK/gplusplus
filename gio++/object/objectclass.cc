@@ -19,23 +19,3 @@
 #include <gio++/object/objectimplementor.h>
 using namespace gioplusplus;
 using namespace gioplusplus::object;
-
-GPP_IMPLEMENT (int, _int,
-{
-
-  GPP_IMPLEMENT_CLASS_VTABLE ({ int (*some) (); })
-
-  GPP_IMPLEMENT_DEFAULT_FINALIZE (
-    {
-    })
-
-  GPP_IMPLEMENT_CLASS_INIT (
-    {
-      klass->some = nullptr;
-      G_OBJECT_CLASS (klass)->finalize = class_finalize;
-    })
-
-  GPP_IMPLEMENT_DEFAULT_INSTANCE_INIT ()
-});
-
-static_assert (details::has_class_init<__gioplusplus_implementor_info_int>);

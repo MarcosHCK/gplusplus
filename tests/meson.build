@@ -47,3 +47,4 @@ endif
 
 subdir ('asynclib')
 subdir ('common')
+subdir ('object')
