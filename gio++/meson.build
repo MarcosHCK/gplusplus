@@ -22,10 +22,11 @@ subdir ('common')
 
 # level 1
 subdir ('asynclib')
+subdir ('object')
 
 __gioplusplus_ssl = [ ]
 
-foreach bit: [ __asynclib_dep, __common_dep ]
+foreach bit: [ __asynclib_dep, __common_dep, __object_dep ]
 
   __gioplusplus_ssl += [ bit.as_link_whole () ]
 endforeach
