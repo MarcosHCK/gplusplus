@@ -35,6 +35,33 @@ namespace
   static_assert (sizeof (small_type) <= sizeof (void*));
   static_assert (alignof (small_type) <= alignof (void*));
 
+  struct arbitrary_storage
+    {
+      alignas (small_type) std::byte bytes [sizeof (small_type)];
+    };
+
+  struct arbitrary_marker
+    {
+      std::byte value;
+    };
+
+  struct heap_type
+    {
+      static inline int dtor_calls = 0;
+      guchar payload [32];
+      int value;
+
+      inline explicit heap_type (int value_) noexcept: value (value_)
+        { std::memset (payload, value_, sizeof (payload)); }
+
+      inline ~heap_type ()
+        { ++dtor_calls; }
+    };
+
+  static_assert (sizeof (arbitrary_storage) >= sizeof (small_type));
+  static_assert (alignof (arbitrary_storage) >= alignof (small_type));
+  static_assert (sizeof (heap_type) > sizeof (arbitrary_marker));
+
   struct large_type
     {
       guchar payload [32];
@@ -111,13 +138,32 @@ int main (int argc, char* argv[])
       soo_ptr::destroy<small_type> (&location);
     });
 
+  g_test_add_action (TESTPATHROOT "/arbitrary_location/in_place", []
+    {
+
+      g_alloc_calls = g_free_calls = 0;
+
+      arbitrary_storage location {};
+      auto* ptr = soo_ptr::create<small_type, arbitrary_storage, counting_alloc, counting_free> (&location, 42);
+
+      g_assert_cmpint (42, ==, ptr->value);
+      g_assert_true (ptr == reinterpret_cast<small_type*> (location.bytes));
+      g_assert_cmpint (0, ==, g_alloc_calls);
+
+      ptr->value = 24;
+      g_assert_cmpint (24, ==, ptr->value);
+
+      soo_ptr::destroy<small_type, arbitrary_storage, counting_free> (&location, ptr);
+      g_assert_cmpint (0, ==, g_free_calls);
+    });
+
   g_test_add_action (TESTPATHROOT "/large", []
     {
 
       g_alloc_calls = g_free_calls = 0;
 
       void* location = nullptr;
-      auto* ptr = soo_ptr::create<large_type, counting_alloc, counting_free> (&location, 7);
+      auto* ptr = soo_ptr::create<large_type, void*, counting_alloc, counting_free> (&location, 7);
 
       g_assert_cmpint (1, ==, g_alloc_calls);
       g_assert_cmpint (0, ==, g_free_calls);
@@ -129,8 +175,31 @@ int main (int argc, char* argv[])
       g_assert_cmpuint ((guintptr) location, !=, (guintptr) &location);
       g_assert_true (ptr == soo_ptr::cast<large_type> (&location));
 
-      soo_ptr::destroy<large_type, counting_free> (&location);
+      soo_ptr::destroy<large_type, void*, counting_free> (&location);
       g_assert_cmpint (1, ==, g_free_calls);
+    });
+
+  g_test_add_action (TESTPATHROOT "/arbitrary_location/allocator_fallback", []
+    {
+
+      heap_type::dtor_calls = 0;
+      g_alloc_calls = g_free_calls = 0;
+
+      arbitrary_marker location { std::byte { 0x5a } };
+      auto* ptr = soo_ptr::create<heap_type, arbitrary_marker, counting_alloc, counting_free> (&location, 7);
+
+      g_assert_cmpint (1, ==, g_alloc_calls);
+      g_assert_cmpint (0, ==, g_free_calls);
+      g_assert_cmpint (7, ==, ptr->value);
+      for (guint i = 0; i < sizeof (heap_type::payload); ++i)
+        g_assert_cmpuint (ptr->payload [i], ==, 7);
+      g_assert_true (ptr != reinterpret_cast<heap_type*> (&location));
+      g_assert_cmpuint (std::to_integer<guint> (location.value), ==, 0x5a);
+
+      soo_ptr::destroy<heap_type, arbitrary_marker, counting_free> (&location, ptr);
+      g_assert_cmpint (1, ==, g_free_calls);
+      g_assert_cmpint (1, ==, heap_type::dtor_calls);
+      g_assert_cmpuint (std::to_integer<guint> (location.value), ==, 0x5a);
     });
 
   g_test_add_action (TESTPATHROOT "/throwing_constructor", []
@@ -142,20 +211,20 @@ int main (int argc, char* argv[])
       g_alloc_calls = g_free_calls = 0;
 
       void* location = nullptr;
-      auto* ptr = soo_ptr::create<throwing_type, counting_alloc, counting_free> (&location, 5);
+      auto* ptr = soo_ptr::create<throwing_type, void*, counting_alloc, counting_free> (&location, 5);
       g_assert_cmpint (5, ==, ptr->value);
       g_assert_cmpint (1, ==, g_alloc_calls);
       g_assert_cmpint (0, ==, g_free_calls);
 
       /* clean up the successful object first */
-      soo_ptr::destroy<throwing_type, counting_free> (&location);
+      soo_ptr::destroy<throwing_type, void*, counting_free> (&location);
       g_assert_cmpint (1, ==, g_free_calls);
       g_assert_cmpint (1, ==, throwing_type::dtor_calls);
 
       /* now make the constructor throw: the fresh block must be freed and the
        * slot must be reset, not left pointing at the freed block */
       throwing_type::should_throw = true;
-      g_assert_throws (std::runtime_error, ({ soo_ptr::create<throwing_type, counting_alloc, counting_free> (&location, 6); }));
+      g_assert_throws (std::runtime_error, ({ soo_ptr::create<throwing_type, void*, counting_alloc, counting_free> (&location, 6); }));
       throwing_type::should_throw = false;
 
       g_assert_cmpint (2, ==, g_alloc_calls);
