@@ -22,7 +22,7 @@ __common_headers = [ ]
 __common_inlines = [ ]
 __common_sources = [ ]
 
-foreach bit: [ 'bits', 'boxing', 'constexprstring', 'hashing', 'slice', 'soo' ]
+foreach bit: [ 'bits', 'boxing', 'constexprstring', 'hashing', 'slice', 'soo', 'unalignedstore' ]
   __common_headers += [ '@0@.h'.format (bit) ]
 endforeach
 
