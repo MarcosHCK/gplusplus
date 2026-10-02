@@ -81,7 +81,7 @@ namespace soo_ptr
         return std::construct_at ((T*) ptr, std::forward<Args> (args) ...); }
   
       catch (...) {
-        Free (sizeof (T), *location); throw; }
+        Free (sizeof (T), ptr); throw; }
     }
 
   template<typename T, typename Location, details::allocator_alloc Alloc, details::allocator_free Free>
