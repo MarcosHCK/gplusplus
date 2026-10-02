@@ -87,3 +87,16 @@ test ((testpath + '/vtable').replace ('/', '.'),
       env: [ __testing_env,
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])
+
+test ((testpath + '/properties').replace ('/', '.'),
+      executable ('properties',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'properties') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'properties') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __object_dep, __testing_dep ],
+            sources: 'properties.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])

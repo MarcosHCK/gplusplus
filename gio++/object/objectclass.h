@@ -17,71 +17,25 @@
 #pragma once
 #include <concepts>
 #include <gio++/common/constexprstring.h>
+#include <gio++/common/unalignedstore.h>
+#include <gio++/object/objectclassancestor.h>
+#include <gio++/object/objectclassinterface.h>
+#include <gio++/object/objectclassproperty.h>
+#include <gio++/object/objectclassproperties.h>
+#include <gio++/object/objectclasstype.h>
 #include <glib-object.h>
-#include <type_traits>
 
 namespace gioplusplus::object
 {
 
   namespace details
     {
-
       class object_class_base;
-
-      struct type_tag_base { };
-
-      template<typename T>
-      concept type_tag = std::is_base_of_v<type_tag_base, T>
-                        && ! std::is_same_v<type_tag_base, T>;
-
-      template<typename Fn, typename Ret = void, typename... Args>
-      concept invocable_r = std::is_invocable_r_v<Ret, Fn, Args ...>;
-
-      template<typename Fn, typename Ret, typename... Args>
-      concept invocable_r_or_null = std::is_same_v<Fn, std::nullptr_t>
-                                 || std::is_invocable_r_v<Ret, Fn, Args ...>;
     }
 
   class details::object_class_base
     {
     };
-
-  template<typename ClassType = GObjectClass,
-           typename InstanceType = GObject,
-           details::invocable_r<GType> auto GetType = g_object_get_type>
-  struct object_class_ancestor
-    {
-
-      typedef ClassType Class;
-      typedef InstanceType Instance;
-
-      static constexpr auto get_type = GetType;
-    };
-
-  template<typename IfaceType,
-           details::invocable_r<GType> auto GetType,
-           details::invocable_r<void, gpointer, gpointer> auto IfaceInit>
-  struct object_class_interface
-    {
-
-      typedef IfaceType Iface;
-
-      static constexpr auto get_type = GetType;
-      static constexpr auto iface_init = IfaceInit;
-    };
-
-  namespace type_tag
-    {
-
-      struct abstract: details::type_tag_base
-        { static inline constexpr GTypeFlags flags = G_TYPE_FLAG_ABSTRACT; };
-
-      struct final: details::type_tag_base
-        { static inline constexpr GTypeFlags flags = G_TYPE_FLAG_FINAL; };
-
-      struct normal: details::type_tag_base
-        { static inline constexpr GTypeFlags flags = G_TYPE_FLAG_NONE; };
-    }
 
   namespace details
     {
@@ -95,7 +49,6 @@ namespace gioplusplus::object
            object_class_ancestor Ancestor>
   class details::object_class_structs
     {
-
     public:
 
       struct class_struct
@@ -123,29 +76,6 @@ namespace gioplusplus::object
            object_class_interface... Implementations>
   class object_class: public details::object_class_base
     {
-
-      template<object_class_interface Implementation_>
-      static inline int implement_interface (GType derived_type) noexcept
-        {
-
-          static GInterfaceInfo info =
-            {
-              .interface_init = decltype (Implementation_)::iface_init,
-              .interface_finalize = nullptr,
-              .interface_data = nullptr,
-            };
-
-          auto interface_type = decltype (Implementation_)::get_type ();
-
-        return g_type_add_interface_static (derived_type, interface_type, &info), 0;
-        }
-
-      template<object_class_interface... Implementations_>
-      static inline void implement_interface (GType derived_type, int) noexcept
-        {
-          (void) (implement_interface<Implementations_> (derived_type), ...);
-        }
-
     public:
 
       static inline GType get_type () noexcept G_GNUC_CONST
@@ -170,6 +100,7 @@ namespace gioplusplus::object
           {
 
             .class_size = sizeof (ClassType),
+
             .base_init = BaseInit,
             .base_finalize = BaseFini,
 
@@ -197,8 +128,24 @@ namespace gioplusplus::object
           auto interned_name = g_intern_static_string (Name.c_str ());
           auto derived_type = g_type_register_static (ancestor_type, interned_name, &info, TypeTag::flags);
 
-          implement_interface<Implementations ...> (derived_type, 0);
+          (void) (implement_interface<Implementations> (derived_type), ...);
         return derived_type;
+        }
+
+      template<object_class_interface Implementation_>
+      static inline int implement_interface (GType derived_type) noexcept
+        {
+
+          static GInterfaceInfo info =
+            {
+              .interface_init = decltype (Implementation_)::iface_init,
+              .interface_finalize = nullptr,
+              .interface_data = nullptr,
+            };
+
+          auto interface_type = decltype (Implementation_)::get_type ();
+
+        return g_type_add_interface_static (derived_type, interface_type, &info), 0;
         }
     };
 }

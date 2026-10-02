@@ -40,4 +40,5 @@ struct constexpr_string
   inline constexpr auto size () const noexcept { return _size; }
 
   inline constexpr operator std::string_view () const noexcept { return std::string_view (_value, _size); }
+  inline constexpr operator const char* () const noexcept { return c_str (); }
 };

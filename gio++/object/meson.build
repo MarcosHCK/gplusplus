@@ -15,6 +15,7 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+__object_csttgts = [ ]
 __object_headers = [ ]
 __object_sources = [ ]
 
@@ -27,6 +28,23 @@ foreach bit: [ 'object', 'objectimplementor' ]
   __object_headers += [ '@0@.h'.format (bit) ]
 endforeach
 
+foreach bit: [ 'ancestor', 'concepts', 'interface', 'property', 'type' ]
+  __object_headers += [ 'objectclass@0@.h'.format (bit) ]
+endforeach
+
+foreach bit: [ 'base', 'callables', 'class', 'properties', 'structs' ]
+  __object_headers += [ 'objectimplementor@0@.h'.format (bit) ]
+endforeach
+
+__object_csttgts += custom_target ('objectclassproperties',
+  capture: false,
+  command: [ import ('python').find_installation (),
+             files ('objectclassproperties.py') [0], '@INPUT@', '-b', meson.project_source_root (), '-o', '@OUTPUT@' ],
+  input: 'objectclassproperty.h',
+  install: true,
+  install_dir: get_option ('includedir') / 'gio++/object',
+  output: 'objectclassproperties.h')
+
 install_headers (__object_headers, subdir: 'gio++/object')
 
 __object_lib = static_library ('gioplusplus-object',
@@ -37,7 +55,7 @@ __object_lib = static_library ('gioplusplus-object',
               '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
               '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()) ],
   dependencies: [ config_dep, gobject_dep, __common_dep ],
-  sources: [ __object_headers, __object_sources ])
+  sources: [ __object_csttgts, __object_headers, __object_sources ])
 
 __object_dep = declare_dependency (dependencies: [ gobject_dep, __common_dep ],
   link_with: __object_lib)

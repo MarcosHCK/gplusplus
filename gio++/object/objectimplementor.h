@@ -15,165 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <gio++/common/constexprregistry.h>
 #include <gio++/object/objectclass.h>
-
-namespace gioplusplus::object::details
-{
-
-  template<typename T>
-  struct store_self { using Self = T; };
-
-  /* { Ancestor } */
-
-  template<typename Implementor>
-  concept has_ancestor = requires () { Implementor::Ancestor; };
-
-  template<typename Implementor>
-  struct ancestor_or_default { static inline constexpr auto value = object_class_ancestor (); };
-
-  template<has_ancestor Implementor>
-  struct ancestor_or_default<Implementor> { static inline constexpr auto value = Implementor::Ancestor; };
-
-  /* { VTable } */
-
-  template<typename Implementor>
-  concept has_vtable = requires () { typename Implementor::VTable; };
-
-  template<typename Implementor>
-  struct vtable_or_default { struct type { }; };
-
-  template<has_vtable Implementor>
-  struct vtable_or_default<Implementor> { struct type: public Implementor::VTable { }; };
-
-  namespace build_class
-    {
-
-      template<typename Implementor>
-      struct class_struct;
-
-      template<typename Implementor>
-      struct instance_struct;
-
-      template<typename Implementor>
-      struct object_class_;
-    }
-
-  template<typename Implementor>
-  struct build_class::class_struct: public object_class_structs<typename Implementor::Type, ancestor_or_default<Implementor>::value>::class_struct,
-                                    public vtable_or_default<Implementor>::type
-    {
-    };
-
-  template<typename Implementor>
-  struct build_class::instance_struct: public object_class_structs<typename Implementor::Type, ancestor_or_default<Implementor>::value>::instance_struct
-    {
-    };
-
-  /* { base_class_init } */
-
-  template<typename Implementor>
-  concept has_base_init = requires (build_class::class_struct<Implementor>* c)
-    { Implementor::base_class_init (c); };
-
-  template<typename Implementor, typename>
-  struct base_init_callable { static inline constexpr auto value = nullptr; };
-
-  template<has_base_init Implementor, typename ClassType>
-  struct base_init_callable<Implementor, ClassType> { static inline constexpr auto value = [](gpointer c) noexcept -> void
-    { Implementor::base_class_init ((ClassType*) c); }; };
-
-  /* { base_class_fini } */
-
-  template<typename Implementor>
-  concept has_base_fini = requires (build_class::class_struct<Implementor>* c)
-    { Implementor::base_class_fini (c); };
-
-  template<typename Implementor, typename>
-  struct base_fini_callable { static inline constexpr auto value = nullptr; };
-
-  template<has_base_fini Implementor, typename ClassType>
-  struct base_fini_callable<Implementor, ClassType> { static inline constexpr auto value = [](gpointer c) noexcept -> void
-    { Implementor::base_class_fini ((ClassType*) c); }; };
-
-  /* { class_init } */
-
-  template<typename Implementor>
-  concept has_class_init = requires (build_class::class_struct<Implementor>* c, gpointer d)
-    { Implementor::class_init (c, d); };
-
-  template<typename Implementor, typename>
-  struct class_init_callable { static inline constexpr auto value = nullptr; };
-
-  template<has_class_init Implementor, typename ClassType>
-  struct class_init_callable<Implementor, ClassType> { static inline constexpr auto value = [](gpointer c, gpointer d) noexcept -> void
-    { Implementor::class_init ((ClassType*) c, d); }; };
-
-  /* { class_fini } */
-
-  template<typename Implementor>
-  concept has_class_fini = requires (build_class::class_struct<Implementor>* c, gpointer d)
-    { Implementor::class_fini (c, d); };
-
-  template<typename Implementor, typename>
-  struct class_fini_callable { static inline constexpr auto value = nullptr; };
-
-  template<has_class_fini Implementor, typename ClassType>
-  struct class_fini_callable<Implementor, ClassType> { static inline constexpr auto value = [](gpointer c, gpointer d) noexcept -> void
-    { Implementor::class_fini ((ClassType*) c, d); }; };
-
-  /* { instance_init } */
-
-  template<typename Implementor>
-  concept has_instance_init = requires (build_class::instance_struct<Implementor>* s,
-                                        build_class::class_struct<Implementor>* c)
-    { Implementor::instance_init (s, c); };
-
-  template<typename Implementor, typename, typename>
-  struct instance_init_callable { static inline constexpr auto value = nullptr; };
-
-  template<has_instance_init Implementor, typename ClassType, typename InstanceType>
-  struct instance_init_callable<Implementor, ClassType, InstanceType> { static inline constexpr auto value = [](GTypeInstance* i, gpointer c) noexcept -> void
-    { Implementor::instance_init ((InstanceType*) i, (ClassType*) c); }; };
-
-  template<typename Implementor>
-  struct build_class::object_class_
-    {
-
-      using Type = typename Implementor::Type;
-      using TypeTag = typename Implementor::TypeTag;
-
-      struct Implementor_: public Implementor
-        {
-
-          static inline constexpr auto Ancestor = ancestor_or_default<Implementor>::value;
-
-          using VTable = typename vtable_or_default<Implementor>::type;
-
-          using ClassType = typename build_class::class_struct<Implementor>;
-          using InstanceType = typename build_class::instance_struct<Implementor>;
-
-          static inline constexpr auto base_class_init = base_init_callable<Implementor, ClassType>::value;
-          static inline constexpr auto base_class_fini = base_fini_callable<Implementor, ClassType>::value;
-          static inline constexpr auto class_init = class_init_callable<Implementor, ClassType>::value;
-          static inline constexpr auto class_fini = class_fini_callable<Implementor, ClassType>::value;
-          static inline constexpr auto instance_init = instance_init_callable<Implementor, ClassType, InstanceType>::value;
-        };
-
-      static inline constexpr auto Name = Implementor::ClassName;
-
-      using type = object_class<typename Implementor_::ClassType, typename Implementor_::InstanceType,
-                                Name, TypeTag,
-                                Implementor_::base_class_init, Implementor_::base_class_fini,
-                                Implementor_::class_init, Implementor_::class_fini, Implementor_::instance_init,
-                                Implementor_::Ancestor>;
-    };
-
-  namespace build_class
-    {
-      template<typename Implementor>
-      using object_class = typename object_class_<Implementor>::type;
-    }
-};
+#include <gio++/object/objectimplementorbase.h>
+#include <gio++/object/objectimplementorcallables.h>
+#include <gio++/object/objectimplementorclass.h>
+#include <gio++/object/objectimplementorproperties.h>
+#include <gio++/object/objectimplementorstructs.h>
 
 # define _GPP_IMPLEMENT(TypeName,type_name,tag,...) \
  ; \
@@ -182,6 +30,9 @@ namespace gioplusplus::object::details
  ; \
       using Type = TypeName; \
       using TypeTag = tag; \
+ ; \
+      struct property_adl_tag { }; \
+      struct property_first_adl_tag { }; \
  ; \
       static gpointer parent_class; \
       static inline constexpr auto ClassName = constexpr_string (#TypeName); \
@@ -264,3 +115,12 @@ namespace gioplusplus::object::details
     ([](decltype (p_self) p_self, Type& self) noexcept -> void __VA_ARGS__) (p_self, p_self->self); \
     (&p_self->self)->~Type (); \
   })
+
+# define GPP_IMPLEMENT_PROPERTY(type,...) \
+  static constexpr constexpr_registry::install_once<property_first_adl_tag, \
+    1 + __COUNTER__, __COUNTER__> G_GNUC_UNUSED G_PASTE (_reg_id_, __COUNTER__) {}; \
+  static constexpr constexpr_registry::register_<property_adl_tag, __COUNTER__ - 2, \
+    gioplusplus::object::object_class_property_##type <gioplusplus::object::details::build_class::instance_struct<Self>, __VA_ARGS__> {}> G_GNUC_UNUSED G_PASTE (_reg_prop_, __COUNTER__) {};
+
+# define GPP_IMPLEMENT_INSTALL_PROPERTIES \
+  gioplusplus::object::details::build_class::properties_installer<Self, __COUNTER__>::install (klass);
