@@ -113,8 +113,8 @@ def struct_for (desc: StructForDescriptor):
            constexpr_string Name, constexpr_string Nick, constexpr_string Blurb,
            {template_expr}{E (template_expr)}
            details::property_tag PropertyTag = property_tag::normal,
-           details::invocable_r_or_null<void, InstanceType*, GValue*> auto GetProperty = nullptr,
-           details::invocable_r_or_null<void, InstanceType*, const GValue*> auto SetProperty = nullptr>
+           details::invocable_r_or_null<void, InstanceType*, GValue*, GParamSpec*> auto GetProperty = nullptr,
+           details::invocable_r_or_null<void, InstanceType*, const GValue*, GParamSpec*> auto SetProperty = nullptr>
   using object_class_property_{desc.name} = object_class_property<InstanceType, details::_create_{desc.name}_spec<Name, Nick, Blurb{E (descend_expr)}{descend_expr}>, PropertyTag, GetProperty, SetProperty>;'''
 
   return ( f'{l}\r\n'  for l in d.splitlines () )

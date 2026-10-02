@@ -24,6 +24,14 @@ namespace
 
   struct properties_probe { };
   struct bare_probe { };
+  struct default_property_probe { int count; };
+
+  static int count_get_calls = 0;
+  static int count_set_calls = 0;
+  static GParamSpec* last_count_get_pspec = nullptr;
+  static GParamSpec* last_count_set_pspec = nullptr;
+  static gpointer last_count_get_instance = nullptr;
+  static gpointer last_count_set_instance = nullptr;
 
   struct read_write_tag: gioplusplus::object::details::property_tag_base
     { static inline constexpr GParamFlags flags = G_PARAM_READWRITE; };
@@ -39,6 +47,10 @@ namespace
   using label_tag = gioplusplus::object::property_tag::or_<
     gioplusplus::object::property_tag::construct_only,
     writable_tag>;
+
+  using construct_read_write_tag = gioplusplus::object::property_tag::or_<
+    gioplusplus::object::property_tag::construct,
+    read_write_tag>;
 
   static void property_getter (GObject*, guint, GValue*, GParamSpec*) noexcept
     { }
@@ -62,6 +74,16 @@ namespace
       g_value_init (&value, spec->value_type);
       g_param_value_set_default (spec, &value);
       return value;
+    }
+
+  static void reset_default_property_state () noexcept
+    {
+      count_get_calls = 0;
+      count_set_calls = 0;
+      last_count_get_pspec = nullptr;
+      last_count_set_pspec = nullptr;
+      last_count_get_instance = nullptr;
+      last_count_set_instance = nullptr;
     }
 }
 
@@ -92,6 +114,43 @@ GPP_IMPLEMENT_FINAL (bare_probe, bare_probe,
   GPP_IMPLEMENT_CLASS_INIT (
     {
       GPP_IMPLEMENT_INSTALL_PROPERTIES
+    })
+});
+
+GPP_IMPLEMENT_FINAL (default_property_probe, default_property_probe,
+{
+
+  GPP_IMPLEMENT_PROPERTY (int, "count", "Count", "A value with custom accessors", 0, 100, 5,
+    construct_read_write_tag,
+    [] (auto* p_self, GValue* value, GParamSpec* pspec) noexcept
+      {
+        ++count_get_calls;
+        last_count_get_pspec = pspec;
+        last_count_get_instance = p_self;
+        g_value_set_int (value, p_self->self.count);
+      },
+    [] (auto* p_self, const GValue* value, GParamSpec* pspec) noexcept
+      {
+        ++count_set_calls;
+        last_count_set_pspec = pspec;
+        last_count_set_instance = p_self;
+        p_self->self.count = g_value_get_int (value);
+      });
+
+  GPP_IMPLEMENT_PROPERTY (int, "unhandled", "Unhandled", "A property without accessors", 0, 100, 0,
+    read_write_tag);
+
+  GPP_IMPLEMENT_CLASS_INIT (
+    {
+      auto* object_class = G_OBJECT_CLASS (klass);
+      object_class->get_property = GPP_IMPLEMENT_DEFAULT_GET_PROPERTY
+      object_class->set_property = GPP_IMPLEMENT_DEFAULT_SET_PROPERTY
+      GPP_IMPLEMENT_INSTALL_PROPERTIES
+    })
+
+  GPP_IMPLEMENT_INSTANCE_INIT (
+    {
+      new (&p_self->self) Type { 0 };
     })
 });
 
@@ -201,6 +260,124 @@ int main (int argc, char* argv[])
       g_assert_cmpuint (own_count, ==, 0);
       g_free (specs);
       g_type_class_unref (object_class);
+    });
+
+  g_test_add_action (TESTPATHROOT "/default_vfuncs/construct_and_roundtrip", []
+    {
+
+      reset_default_property_state ();
+
+      auto* object = (GObject*) g_object_new (default_property_probe_get_type (), NULL);
+      auto* object_class = G_OBJECT_GET_CLASS (object);
+      auto* count_spec = g_object_class_find_property (object_class, "count");
+      gint count = 0;
+
+      g_assert_nonnull (count_spec);
+      g_assert_cmpint (count_set_calls, ==, 1);
+      g_assert_cmpint (last_count_set_pspec == count_spec, ==, TRUE);
+      g_assert_true (last_count_set_instance == object);
+
+      g_object_get (object, "count", &count, NULL);
+      g_assert_cmpint (count, ==, 5);
+      g_assert_cmpint (count_get_calls, ==, 1);
+      g_assert_true (last_count_get_pspec == count_spec);
+      g_assert_true (last_count_get_instance == object);
+
+      g_object_set (object, "count", 37, NULL);
+      g_assert_cmpint (count_set_calls, ==, 2);
+      g_assert_true (last_count_set_pspec == count_spec);
+      g_assert_true (last_count_set_instance == object);
+
+      g_object_get (object, "count", &count, NULL);
+      g_assert_cmpint (count, ==, 37);
+      g_assert_cmpint (count_get_calls, ==, 2);
+      g_assert_cmpint (last_count_get_pspec == count_spec, ==, TRUE);
+      g_assert_true (last_count_get_instance == object);
+
+      g_object_unref (object);
+    });
+
+  g_test_add_action (TESTPATHROOT "/default_vfuncs/missing_getter_warns", []
+    {
+
+      reset_default_property_state ();
+
+      if (g_test_subprocess ())
+        {
+          auto* object = (GObject*) g_object_new (default_property_probe_get_type (), NULL);
+          gint count = 0;
+          g_object_get (object, "unhandled", &count, NULL);
+          g_object_unref (object);
+          return;
+        }
+
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr ("*invalid property id*");
+    });
+
+  g_test_add_action (TESTPATHROOT "/default_vfuncs/missing_setter_warns", []
+    {
+
+      reset_default_property_state ();
+
+      if (g_test_subprocess ())
+        {
+          auto* object = (GObject*) g_object_new (default_property_probe_get_type (), NULL);
+          g_object_set (object, "unhandled", 9, NULL);
+          g_object_unref (object);
+          return;
+        }
+
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr ("*invalid property id*");
+    });
+
+  g_test_add_action (TESTPATHROOT "/default_vfuncs/invalid_getter_id_warns", []
+    {
+
+      reset_default_property_state ();
+
+      if (g_test_subprocess ())
+        {
+          auto* object = (GObject*) g_object_new (default_property_probe_get_type (), NULL);
+          auto* object_class = G_OBJECT_GET_CLASS (object);
+          auto* count_spec = g_object_class_find_property (object_class, "count");
+          GValue value = G_VALUE_INIT;
+          g_value_init (&value, G_TYPE_INT);
+          object_class->get_property (object, 0, &value, count_spec);
+          g_value_unset (&value);
+          g_object_unref (object);
+          return;
+        }
+
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr ("*invalid property id*");
+    });
+
+  g_test_add_action (TESTPATHROOT "/default_vfuncs/invalid_setter_id_warns", []
+    {
+
+      reset_default_property_state ();
+
+      if (g_test_subprocess ())
+        {
+          auto* object = (GObject*) g_object_new (default_property_probe_get_type (), NULL);
+          auto* object_class = G_OBJECT_GET_CLASS (object);
+          auto* count_spec = g_object_class_find_property (object_class, "count");
+          GValue value = G_VALUE_INIT;
+          g_value_init (&value, G_TYPE_INT);
+          object_class->set_property (object, 3, &value, count_spec);
+          g_value_unset (&value);
+          g_object_unref (object);
+          return;
+        }
+
+      g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_DEFAULT);
+      g_test_trap_assert_failed ();
+      g_test_trap_assert_stderr ("*invalid property id*");
     });
 
 return g_test_run ();

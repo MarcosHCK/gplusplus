@@ -17,6 +17,8 @@
 #pragma once
 #include <gio++/common/constexprregistry.h>
 #include <gio++/object/objectimplementorbase.h>
+#include <gio++/object/objectimplementorstructs.h>
+#include <tuple>
 #include <utility>
 
 namespace gioplusplus::object::details::build_class
@@ -55,6 +57,79 @@ namespace gioplusplus::object::details::build_class
         {
           return std::array<GParamSpec*, 1 + std::tuple_size_v<decltype (List)>> {
               nullptr, install<std::tuple_element_t<Is, decltype (List)>> (std::get<Is> (List)) ... };
+        }
+
+      /* { vfuncs } */
+
+      template<auto Func>
+      static void accessor (auto* self, guint property_id, auto value, GParamSpec* pspec) noexcept
+        {
+
+          if constexpr (! std::same_as<std::nullptr_t, decltype (Func)>)
+
+            Func (self, value, pspec);
+          else
+            G_OBJECT_WARN_INVALID_PROPERTY_ID (G_OBJECT (self), property_id, pspec);
+        }
+
+      static void get_property (GObject* p_self, guint property_id, GValue* value, GParamSpec* pspec) noexcept
+        {
+          get_property_ (p_self, property_id, value, pspec, std::make_integer_sequence<size_t, n_properties> { });
+        }
+
+      template<size_t... Is>
+      static void get_property_ (auto* p_self, guint property_id, GValue* value, GParamSpec* pspec,
+          std::integer_sequence<size_t, Is ...> const&) noexcept
+        {
+
+          using fn = void (*) (build_class::instance_struct<Implementor>*, guint, GValue*, GParamSpec*);
+
+          static constexpr fn table [] =
+            {
+
+              [] (auto self, guint property_id, GValue* value, GParamSpec* pspec)
+                { G_OBJECT_WARN_INVALID_PROPERTY_ID (G_OBJECT (self), property_id, pspec); },
+
+              [] (auto self, guint property_id, GValue* value, GParamSpec* pspec)
+                { accessor<std::tuple_element_t<Is, decltype (List)>::get_property> (self, property_id, value, pspec); }
+              ...
+            };
+
+          if (auto self = (build_class::instance_struct<Implementor>*) p_self; 0 < property_id && n_properties >= property_id)
+
+            table [property_id] (self, property_id, value, pspec);
+          else
+            G_OBJECT_WARN_INVALID_PROPERTY_ID (G_OBJECT (p_self), property_id, pspec);
+        }
+
+      static void set_property (GObject* p_self, guint property_id, const GValue* value, GParamSpec* pspec) noexcept
+        {
+          set_property_ (p_self, property_id, value, pspec, std::make_integer_sequence<size_t, n_properties> { });
+        }
+
+      template<size_t... Is>
+      static void set_property_ (auto* p_self, guint property_id, const GValue* value, GParamSpec* pspec,
+          std::integer_sequence<size_t, Is ...> const&) noexcept
+        {
+
+          using fn = void (*) (build_class::instance_struct<Implementor>*, guint, const GValue*, GParamSpec*);
+
+          static constexpr fn table [] =
+            {
+
+              [] (auto self, guint property_id, const GValue* value, GParamSpec* pspec)
+                { G_OBJECT_WARN_INVALID_PROPERTY_ID (G_OBJECT (self), property_id, pspec); },
+
+              [] (auto self, guint property_id, const GValue* value, GParamSpec* pspec)
+                { accessor<std::tuple_element_t<Is, decltype (List)>::set_property> (self, property_id, value, pspec); }
+              ...
+            };
+
+          if (auto self = (build_class::instance_struct<Implementor>*) p_self; 0 < property_id && n_properties >= property_id)
+
+            table [property_id] (self, property_id, value, pspec);
+          else
+            G_OBJECT_WARN_INVALID_PROPERTY_ID (G_OBJECT (p_self), property_id, pspec);
         }
     };
 }

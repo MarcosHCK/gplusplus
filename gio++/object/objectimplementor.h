@@ -124,3 +124,9 @@
 
 # define GPP_IMPLEMENT_INSTALL_PROPERTIES \
   gioplusplus::object::details::build_class::properties_installer<Self, __COUNTER__>::install (klass);
+
+# define GPP_IMPLEMENT_DEFAULT_GET_PROPERTY \
+  gioplusplus::object::details::build_class::properties_installer<Self, __COUNTER__>::get_property;
+
+# define GPP_IMPLEMENT_DEFAULT_SET_PROPERTY \
+  gioplusplus::object::details::build_class::properties_installer<Self, __COUNTER__>::set_property;

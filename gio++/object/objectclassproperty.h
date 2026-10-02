@@ -78,8 +78,8 @@ namespace gioplusplus::object
   template<typename InstanceType,
            details::invocable_r<GParamSpec*, GParamFlags> auto CreateSpec,
            details::property_tag PropertyTag = property_tag::normal,
-           details::invocable_r_or_null<void, InstanceType*, GValue*> auto GetProperty = nullptr,
-           details::invocable_r_or_null<void, InstanceType*, const GValue*> auto SetProperty = nullptr>
+           details::invocable_r_or_null<void, InstanceType*, GValue*, GParamSpec*> auto GetProperty = nullptr,
+           details::invocable_r_or_null<void, InstanceType*, const GValue*, GParamSpec*> auto SetProperty = nullptr>
   struct object_class_property
     {
 
