@@ -100,3 +100,16 @@ test ((testpath + '/properties').replace ('/', '.'),
       env: [ __testing_env,
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])
+
+test ((testpath + '/interfaces').replace ('/', '.'),
+      executable ('interfaces',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'interfaces') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'interfaces') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __object_dep, __testing_dep ],
+            sources: 'interfaces.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])

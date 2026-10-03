@@ -138,7 +138,7 @@ namespace gplusplus::object
           static GInterfaceInfo info =
             {
               .interface_init = decltype (Implementation_)::iface_init,
-              .interface_finalize = nullptr,
+              .interface_finalize = decltype (Implementation_)::iface_fini,
               .interface_data = nullptr,
             };
 

@@ -20,6 +20,7 @@
 #include <gplusplus/object/objectimplementorbase.h>
 #include <gplusplus/object/objectimplementorcallables.h>
 #include <gplusplus/object/objectimplementorclass.h>
+#include <gplusplus/object/objectimplementorinterface.h>
 #include <gplusplus/object/objectimplementorproperties.h>
 #include <gplusplus/object/objectimplementorstructs.h>
 
@@ -30,6 +31,9 @@
  ; \
       using Type = TypeName; \
       using TypeTag = tag; \
+ ; \
+      struct interface_adl_tag { }; \
+      struct interface_first_adl_tag { }; \
  ; \
       struct property_adl_tag { }; \
       struct property_first_adl_tag { }; \
@@ -44,7 +48,7 @@
                                                     public gplusplus::object::details::store_self<__gplusplus_implementor_info_##TypeName> \
     __VA_ARGS__; \
   using __gplusplus_implementor_type_##TypeName = \
-    gplusplus::object::details::build_class::object_class<__gplusplus_implementor_info_##TypeName>; \
+    gplusplus::object::details::build_class::object_class<__gplusplus_implementor_info_##TypeName, __COUNTER__>; \
  ; \
   GType type_name##_get_type () G_GNUC_CONST; \
   GType type_name##_get_type () { return __gplusplus_implementor_type_##TypeName::get_type (); }
@@ -57,6 +61,12 @@
 
 # define GPP_IMPLEMENT_ANCESTOR(TypeName,type_name) \
   static inline constexpr auto Ancestor = (gplusplus::object::object_class_ancestor<TypeName, TypeName##Class, type_name##_get_type> ());
+
+# define GPP_IMPLEMENT_INTERFACE(TypeName,type_name,...) \
+  static constexpr constexpr_registry::install_once<interface_first_adl_tag, \
+    1 + __COUNTER__, __COUNTER__> G_GNUC_UNUSED G_PASTE (_reg_id_, __COUNTER__) {}; \
+  static constexpr constexpr_registry::register_<interface_adl_tag, __COUNTER__ - 2, \
+    gplusplus::object::details::object_class_interface_<TypeName, TypeName##Iface, type_name##_get_type, __VA_ARGS__>::type {}> G_GNUC_UNUSED G_PASTE (_reg_prop_, __COUNTER__) {};
 
 # define GPP_IMPLEMENT_CLASS_VTABLE(...) struct VTable __VA_ARGS__;
 

@@ -17,6 +17,7 @@
 #pragma once
 #include <array>
 #include <gplusplus/common/constexprregistry.h>
+#include <gplusplus/object/objectclassproperty.h>
 #include <gplusplus/object/objectimplementorbase.h>
 #include <gplusplus/object/objectimplementorstructs.h>
 #include <tuple>

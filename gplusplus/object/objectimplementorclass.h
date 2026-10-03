@@ -15,14 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <cstddef>
 #include <gplusplus/object/objectimplementorbase.h>
 #include <gplusplus/object/objectimplementorcallables.h>
+#include <gplusplus/object/objectimplementorinterfaces.h>
 #include <gplusplus/object/objectimplementorstructs.h>
+#include <utility>
 
 namespace gplusplus::object::details::build_class
 {
 
-  template<typename Implementor>
+  template<typename Implementor, std::size_t FinalCounter>
   struct object_class_
     {
 
@@ -48,13 +51,28 @@ namespace gplusplus::object::details::build_class
 
       static inline constexpr auto Name = Implementor::ClassName;
 
-      using type = object_class<typename Implementor_::ClassType, typename Implementor_::InstanceType,
-                                Name, TypeTag,
-                                Implementor_::base_class_init, Implementor_::base_class_fini,
-                                Implementor_::class_init, Implementor_::class_fini, Implementor_::instance_init,
-                                Implementor_::Ancestor>;
+      static inline constexpr auto expand_interfaces () noexcept
+        {
+
+          using Interfaces = typename build_class::interfaces_installer<Implementor, FinalCounter>;
+          return expand_interfaces<Interfaces> (std::make_integer_sequence<std::size_t, Interfaces::n_interfaces> ());
+        }
+
+      template<typename Interfaces, std::size_t... Is>
+      static inline constexpr auto expand_interfaces (std::integer_sequence<std::size_t, Is ...> const&) noexcept
+        {
+
+          return object_class<typename Implementor_::ClassType, typename Implementor_::InstanceType,
+                              Name, TypeTag,
+                              Implementor_::base_class_init, Implementor_::base_class_fini,
+                              Implementor_::class_init, Implementor_::class_fini, Implementor_::instance_init,
+                              Implementor_::Ancestor,
+                              std::get<Is> (Interfaces::List) ...> { };
+        }
+
+      using type = decltype (expand_interfaces ());
     };
 
-  template<typename Implementor>
-  using object_class = typename object_class_<Implementor>::type;
+  template<typename Implementor, std::size_t FinalCounter>
+  using object_class = typename object_class_<Implementor, FinalCounter>::type;
 }

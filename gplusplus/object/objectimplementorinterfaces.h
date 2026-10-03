@@ -15,25 +15,25 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <gplusplus/object/objectclassconcepts.h>
-#include <glib-object.h>
+#include <gplusplus/common/constexprregistry.h>
+#include <gplusplus/object/objectclassinterface.h>
+#include <gplusplus/object/objectimplementorbase.h>
+#include <tuple>
 
-namespace gplusplus::object
+namespace gplusplus::object::details::build_class
 {
 
-  template<typename Type_,
-           typename TypeIface_,
-           details::invocable_r<GType> auto GetType,
-           details::invocable_r<void, gpointer, gpointer> auto IfaceInit,
-           details::invocable_r_or_null<void, gpointer, gpointer> auto IfaceFini = nullptr>
-  struct object_class_interface
+  template<typename Implementor,
+           std::size_t T>
+  struct interfaces_installer
     {
 
-      typedef Type_ Type;
-      typedef TypeIface_ TypeIface;
+      using FirstTag = typename Implementor::interface_first_adl_tag;
+      using PropTag = typename Implementor::interface_adl_tag;
 
-      static inline constexpr auto get_type = GetType;
-      static inline constexpr auto iface_init = IfaceInit;
-      static inline constexpr auto iface_fini = IfaceFini;
+      static inline constexpr auto First = constexpr_registry::guess_last<FirstTag, T, 0> ();
+      static inline constexpr auto List = constexpr_registry::collect<PropTag, T, First> ();
+
+      static inline constexpr auto n_interfaces = std::tuple_size_v<decltype (List)>;
     };
 }

@@ -32,7 +32,7 @@ foreach bit: [ 'ancestor', 'concepts', 'interface', 'property', 'type' ]
   __object_headers += [ 'objectclass@0@.h'.format (bit) ]
 endforeach
 
-foreach bit: [ 'base', 'callables', 'class', 'properties', 'structs' ]
+foreach bit: [ 'base', 'callables', 'class', 'interface', 'interfaces', 'properties', 'structs' ]
   __object_headers += [ 'objectimplementor@0@.h'.format (bit) ]
 endforeach
 
