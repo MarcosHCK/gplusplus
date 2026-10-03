@@ -24,13 +24,6 @@ subdir ('common')
 subdir ('asynclib')
 subdir ('object')
 
-__gplusplus_ssl = [ ]
-
-foreach bit: [ __asynclib_dep, __common_dep, __object_dep ]
-
-  __gplusplus_ssl += [ bit.as_link_whole () ]
-endforeach
-
 __gplusplus_lib = library ('gplusplus',
   c_args: [ '-DG_LOG_DOMAIN="Gpp.Common"', '-DG_LOG_USE_STRUCTURED=1',
             '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
@@ -38,8 +31,9 @@ __gplusplus_lib = library ('gplusplus',
   cpp_args: [ '-DG_LOG_DOMAIN="Gpp.Common"', '-DG_LOG_USE_STRUCTURED=1',
               '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
               '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()) ],
-  dependencies: [ config_dep, __gplusplus_ssl ],
+  dependencies: [ config_dep, gio_dep, glib_dep, gobject_dep ],
   install: true,
+  link_whole: [ __asynclib_lib, __common_lib, __object_lib ],
   soversion: '@0@.@1@'.format (git_version_major, git_version_minor),
   sources: 'dummy.cc',
   version: '@0@.@1@.@2@'.format (git_version_major, git_version_minor, git_version_micro))
