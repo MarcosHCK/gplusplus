@@ -23,15 +23,28 @@ c_args = [ '-DG_LOG_DOMAIN="Gpp.Tests.Object"',
 testpath = meson.current_source_dir ().replace (basepath + '/', '')
 testpathroot = '/org/hck/gplusplus'
 
-test ((testpath + '/registration').replace ('/', '.'),
-      executable ('registration',
+test ((testpath + '/chain').replace ('/', '.'),
+      executable ('chain',
             c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'registration') ],
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'chain') ],
             cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'registration') ],
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'chain') ],
             build_by_default: false,
             dependencies: [ config_dep, __object_dep, __testing_dep ],
-            sources: 'registration.cc'),
+            sources: 'chain.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])
+
+test ((testpath + '/interfaces').replace ('/', '.'),
+      executable ('interfaces',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'interfaces') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'interfaces') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __object_dep, __testing_dep ],
+            sources: 'interfaces.cc'),
       env: [ __testing_env,
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])
@@ -62,32 +75,6 @@ test ((testpath + '/lifecycle').replace ('/', '.'),
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])
 
-test ((testpath + '/chain').replace ('/', '.'),
-      executable ('chain',
-            c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'chain') ],
-            cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'chain') ],
-            build_by_default: false,
-            dependencies: [ config_dep, __object_dep, __testing_dep ],
-            sources: 'chain.cc'),
-      env: [ __testing_env,
-             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
-             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])
-
-test ((testpath + '/vtable').replace ('/', '.'),
-      executable ('vtable',
-            c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'vtable') ],
-            cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'vtable') ],
-            build_by_default: false,
-            dependencies: [ config_dep, __object_dep, __testing_dep ],
-            sources: 'vtable.cc'),
-      env: [ __testing_env,
-             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
-             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])
-
 test ((testpath + '/properties').replace ('/', '.'),
       executable ('properties',
             c_args: c_args +
@@ -101,15 +88,28 @@ test ((testpath + '/properties').replace ('/', '.'),
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])
 
-test ((testpath + '/interfaces').replace ('/', '.'),
-      executable ('interfaces',
+test ((testpath + '/registration').replace ('/', '.'),
+      executable ('registration',
             c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'interfaces') ],
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'registration') ],
             cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'interfaces') ],
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'registration') ],
             build_by_default: false,
             dependencies: [ config_dep, __object_dep, __testing_dep ],
-            sources: 'interfaces.cc'),
+            sources: 'registration.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])
+
+test ((testpath + '/vtable').replace ('/', '.'),
+      executable ('vtable',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'vtable') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'vtable') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __object_dep, __testing_dep ],
+            sources: 'vtable.cc'),
       env: [ __testing_env,
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ])

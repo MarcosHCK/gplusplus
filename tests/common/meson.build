@@ -22,6 +22,19 @@ c_args = [ '-DG_LOG_DOMAIN="Gpp.Tests.Common"',
 
 testpath = meson.current_source_dir ().replace (basepath + '/', '')
 
+test ((testpath + '/bits').replace ('/', '.'),
+      executable ('bits',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'bits') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'bits') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
+            sources: 'bits.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ] )
+
 test ((testpath + '/bytes').replace ('/', '.'),
       executable ('bytes',
             c_args: c_args +
@@ -34,6 +47,45 @@ test ((testpath + '/bytes').replace ('/', '.'),
       env: [ __testing_env,
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ] )
+
+test ((testpath + '/error').replace ('/', '.'),
+      executable ('error',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'error') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'error') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
+            sources: 'error.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ] )
+
+test ((testpath + '/hashing').replace ('/', '.'),
+      executable ('hashing',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'hashing') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'hashing') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
+            sources: 'hashing.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ] )
+
+test ((testpath + '/soo').replace ('/', '.'),
+      executable ('soo',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'soo') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'soo') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
+            sources: 'soo.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()) ], )
 
 test ((testpath + '/variantdict').replace ('/', '.'),
       executable ('variantdict',
@@ -57,58 +109,6 @@ test ((testpath + '/variantiter').replace ('/', '.'),
             build_by_default: false,
             dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
             sources: 'variantiter.cc'),
-      env: [ __testing_env,
-             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
-             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()) ], )
-
-test ((testpath + '/bits').replace ('/', '.'),
-      executable ('bits',
-            c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'bits') ],
-            cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'bits') ],
-            build_by_default: false,
-            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
-            sources: 'bits.cc'),
-      env: [ __testing_env,
-             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
-             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()) ], )
-
-test ((testpath + '/hashing').replace ('/', '.'),
-      executable ('hashing',
-            c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'hashing') ],
-            cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'hashing') ],
-            build_by_default: false,
-            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
-            sources: 'hashing.cc'),
-      env: [ __testing_env,
-             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
-             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()) ], )
-
-test ((testpath + '/soo').replace ('/', '.'),
-      executable ('soo',
-            c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'soo') ],
-            cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'soo') ],
-            build_by_default: false,
-            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
-            sources: 'soo.cc'),
-      env: [ __testing_env,
-             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
-             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()) ], )
-
-test ((testpath + '/error').replace ('/', '.'),
-      executable ('error',
-            c_args: c_args +
-                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'error') ],
-            cpp_args: c_args +
-                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'error') ],
-            build_by_default: false,
-            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
-            sources: 'error.cc'),
       env: [ __testing_env,
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()) ], )
