@@ -1,12 +1,12 @@
 /* Copyright (C) 2025-2026 MarcosHCK
- * This file is part of gio++.
+ * This file is part of gplusplus.
  *
- * gio++ is free software: you can redistribute it and/or modify
+ * gplusplus is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * gio++ is distributed in the hope that it will be useful,
+ * gplusplus is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include <config.h>
-#include <gio++/object/objectimplementor.h>
+#include <gplusplus/object/objectimplementor.h>
 #include <tests/testing.h>
 using namespace testing;
 
@@ -33,23 +33,23 @@ namespace
   static gpointer last_count_get_instance = nullptr;
   static gpointer last_count_set_instance = nullptr;
 
-  struct read_write_tag: gioplusplus::object::details::property_tag_base
+  struct read_write_tag: gplusplus::object::details::property_tag_base
     { static inline constexpr GParamFlags flags = G_PARAM_READWRITE; };
 
-  struct writable_tag: gioplusplus::object::details::property_tag_base
+  struct writable_tag: gplusplus::object::details::property_tag_base
     { static inline constexpr GParamFlags flags = G_PARAM_WRITABLE; };
 
-  using enabled_tag = gioplusplus::object::property_tag::or_<
-    gioplusplus::object::property_tag::or_<gioplusplus::object::property_tag::construct,
-                                           gioplusplus::object::property_tag::explicit_notify>,
+  using enabled_tag = gplusplus::object::property_tag::or_<
+    gplusplus::object::property_tag::or_<gplusplus::object::property_tag::construct,
+                                           gplusplus::object::property_tag::explicit_notify>,
     read_write_tag>;
 
-  using label_tag = gioplusplus::object::property_tag::or_<
-    gioplusplus::object::property_tag::construct_only,
+  using label_tag = gplusplus::object::property_tag::or_<
+    gplusplus::object::property_tag::construct_only,
     writable_tag>;
 
-  using construct_read_write_tag = gioplusplus::object::property_tag::or_<
-    gioplusplus::object::property_tag::construct,
+  using construct_read_write_tag = gplusplus::object::property_tag::or_<
+    gplusplus::object::property_tag::construct,
     read_write_tag>;
 
   static void property_getter (GObject*, guint, GValue*, GParamSpec*) noexcept

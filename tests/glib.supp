@@ -6,5 +6,5 @@
 # Reproducer: the plain-GLib baseline ("/.../stress/native") benchmark. An
 # equivalent test using single-address connects (as "/.../stress/ours" does) or
 # resolver-only lookups does NOT leak, which shows the allocation is owned by
-# GSocketClient's retry machinery and not by gio++ code.
+# GSocketClient's retry machinery and not by gplusplus code.
 leak:libgio-2.0.so.0

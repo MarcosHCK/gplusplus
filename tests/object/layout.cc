@@ -1,12 +1,12 @@
 /* Copyright (C) 2025-2026 MarcosHCK
- * This file is part of gio++.
+ * This file is part of gplusplus.
  *
- * gio++ is free software: you can redistribute it and/or modify
+ * gplusplus is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * gio++ is distributed in the hope that it will be useful,
+ * gplusplus is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include <config.h>
-#include <gio++/object/objectimplementor.h>
+#include <gplusplus/object/objectimplementor.h>
 #include <tests/testing.h>
 using namespace testing;
 
@@ -42,11 +42,11 @@ GPP_IMPLEMENT_FINAL (layout_probe, layout_probe,
   GPP_IMPLEMENT_DEFAULT_FINALIZE ({ })
 });
 
-using info = __gioplusplus_implementor_info_layout_probe;
-using class_struct = gioplusplus::object::details::build_class::class_struct<info>;
-using instance_struct = gioplusplus::object::details::build_class::instance_struct<info>;
+using info = __gplusplus_implementor_info_layout_probe;
+using class_struct = gplusplus::object::details::build_class::class_struct<info>;
+using instance_struct = gplusplus::object::details::build_class::instance_struct<info>;
 
-static_assert (gioplusplus::object::details::has_class_init<info>);
+static_assert (gplusplus::object::details::has_class_init<info>);
 static_assert (sizeof (class_struct) >= sizeof (GObjectClass) + sizeof (void (*) ()));
 static_assert (sizeof (instance_struct) >= sizeof (GObject));
 

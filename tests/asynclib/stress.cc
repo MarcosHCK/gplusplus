@@ -1,12 +1,12 @@
 /* Copyright (C) 2025-2026 MarcosHCK
- * This file is part of gio++.
+ * This file is part of gplusplus.
  *
- * gio++ is free software: you can redistribute it and/or modify
+ * gplusplus is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * gio++ is distributed in the hope that it will be useful,
+ * gplusplus is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include <config.h>
-#include <gio++/asynclib/asynclib.h>
-#include <gio++/common/boxing.h>
+#include <gplusplus/asynclib/asynclib.h>
+#include <gplusplus/common/boxing.h>
 #include <tests/asynclib/server.h>
 #include <ranges>
 #include <tests/testing.h>
@@ -25,7 +25,7 @@ using namespace testing;
 
 static void io_work_native (const gchar* hostname, guint16 port, GCancellable* cancellable, GAsyncReadyCallback callback, gpointer user_data);
 static std::pair<gsize, gchar*> io_work_native_finish (GAsyncResult* result, GError** error);
-static gioplusplus::asynclib::task<std::pair<gsize, gchar*>> io_work_ours (const gchar* hostname, guint16 port, GCancellable* cancellable);
+static gplusplus::asynclib::task<std::pair<gsize, gchar*>> io_work_ours (const gchar* hostname, guint16 port, GCancellable* cancellable);
 
 int main (int argc, char* argv[])
 {
@@ -108,7 +108,7 @@ int main (int argc, char* argv[])
               auto p = (D*) user_data;
               *p->took = g_test_timer_elapsed ();
               auto e = (GError*) nullptr;
-              auto r = gioplusplus::asynclib::task_function<io_work_ours> ().finish (result, &e);
+              auto r = gplusplus::asynclib::task_function<io_work_ours> ().finish (result, &e);
 
               g_assert_no_error (e);
               (void) (*p->digest = r.second, *p->total = r.first);
@@ -413,9 +413,9 @@ return std::make_pair (success, written);
 
 /* ours */
 
-gioplusplus::asynclib::async_function<g_socket_client_connect_async, g_socket_client_connect_finish> g_socket_client_connect_task;
+gplusplus::asynclib::async_function<g_socket_client_connect_async, g_socket_client_connect_finish> g_socket_client_connect_task;
 
-static gioplusplus::asynclib::task<GIOStream*> reach_any_task (GList* addresses, guint16 port, GCancellable* cancellable)
+static gplusplus::asynclib::task<GIOStream*> reach_any_task (GList* addresses, guint16 port, GCancellable* cancellable)
 {
 
   auto socket_client = g_socket_client_new ();
@@ -441,11 +441,11 @@ static gioplusplus::asynclib::task<GIOStream*> reach_any_task (GList* addresses,
 throw boxing::error::literal (G_IO_ERROR, G_IO_ERROR_FAILED, "could not connect to any resolved address");
 }
 
-gioplusplus::asynclib::async_function<g_input_stream_read_async, g_input_stream_read_finish> g_input_stream_read_task;
-gioplusplus::asynclib::async_function<g_resolver_lookup_by_name_async, g_resolver_lookup_by_name_finish> g_resolver_lookup_by_name_task;
-gioplusplus::asynclib::async_function<g_output_stream_write_all_async, g_output_stream_write_all_finish_> g_output_stream_write_all_task;
+gplusplus::asynclib::async_function<g_input_stream_read_async, g_input_stream_read_finish> g_input_stream_read_task;
+gplusplus::asynclib::async_function<g_resolver_lookup_by_name_async, g_resolver_lookup_by_name_finish> g_resolver_lookup_by_name_task;
+gplusplus::asynclib::async_function<g_output_stream_write_all_async, g_output_stream_write_all_finish_> g_output_stream_write_all_task;
 
-static gioplusplus::asynclib::task<std::pair<gsize, gchar*>> io_work_ours (const gchar* hostname, guint16 port, GCancellable* cancellable)
+static gplusplus::asynclib::task<std::pair<gsize, gchar*>> io_work_ours (const gchar* hostname, guint16 port, GCancellable* cancellable)
 {
 
   auto resolver = g_resolver_get_default ();

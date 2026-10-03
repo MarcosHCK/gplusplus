@@ -1,12 +1,12 @@
 /* Copyright (C) 2025-2026 MarcosHCK
- * This file is part of gio++.
+ * This file is part of gplusplus.
  *
- * gio++ is free software: you can redistribute it and/or modify
+ * gplusplus is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * gio++ is distributed in the hope that it will be useful,
+ * gplusplus is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -16,7 +16,7 @@
  */
 #include <array>
 #include <config.h>
-#include <gio++/object/objectimplementor.h>
+#include <gplusplus/object/objectimplementor.h>
 #include <tests/testing.h>
 using namespace testing;
 
@@ -101,11 +101,11 @@ GPP_IMPLEMENT (base_value, base_probe,
     })
 });
 
-using base_info = __gioplusplus_implementor_info_base_value;
-using BaseProbe = gioplusplus::object::details::build_class::class_struct<base_info>;
-using BaseProbeClass = gioplusplus::object::details::build_class::instance_struct<base_info>;
+using base_info = __gplusplus_implementor_info_base_value;
+using BaseProbe = gplusplus::object::details::build_class::class_struct<base_info>;
+using BaseProbeClass = gplusplus::object::details::build_class::instance_struct<base_info>;
 
-GType base_probe_get_type () noexcept G_GNUC_CONST;
+GType base_probe_get_type () G_GNUC_CONST;
 
 GPP_IMPLEMENT_FINAL (derived_value, derived_probe,
 {
@@ -142,9 +142,9 @@ GPP_IMPLEMENT_FINAL (derived_value, derived_probe,
     })
 });
 
-using derived_info = __gioplusplus_implementor_info_derived_value;
-using base_class_struct = gioplusplus::object::details::build_class::class_struct<base_info>;
-using derived_class_struct = gioplusplus::object::details::build_class::class_struct<derived_info>;
+using derived_info = __gplusplus_implementor_info_derived_value;
+using base_class_struct = gplusplus::object::details::build_class::class_struct<base_info>;
+using derived_class_struct = gplusplus::object::details::build_class::class_struct<derived_info>;
 
 static_assert (sizeof (derived_class_struct) >= sizeof (base_class_struct));
 

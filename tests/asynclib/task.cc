@@ -1,12 +1,12 @@
 /* Copyright (C) 2025-2026 MarcosHCK
- * This file is part of gio++.
+ * This file is part of gplusplus.
  *
- * gio++ is free software: you can redistribute it and/or modify
+ * gplusplus is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * gio++ is distributed in the hope that it will be useful,
+ * gplusplus is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -15,19 +15,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #include <config.h>
-#include <gio++/asynclib/asynclib.h>
-#include <gio++/common/bits.h>
+#include <gplusplus/asynclib/asynclib.h>
+#include <gplusplus/common/bits.h>
 #include <tests/testing.h>
 using namespace testing;
 
-static gioplusplus::asynclib::task<int> simple (int value) noexcept
+static gplusplus::asynclib::task<int> simple (int value) noexcept
 {
 co_return value;
 }
 
-gioplusplus::asynclib::async_function<g_file_read_async, g_file_read_finish> g_file_read_task;
+gplusplus::asynclib::async_function<g_file_read_async, g_file_read_finish> g_file_read_task;
 
-static gioplusplus::asynclib::task<int> throws_simple (int value) noexcept
+static gplusplus::asynclib::task<int> throws_simple (int value) noexcept
 {
 
   boxing::object file = g_file_new_for_commandline_arg ("not_found");
@@ -35,7 +35,7 @@ static gioplusplus::asynclib::task<int> throws_simple (int value) noexcept
 co_return value;
 }
 
-static gioplusplus::asynclib::task<int> throws_and_changes (int value, const gchar* message) noexcept
+static gplusplus::asynclib::task<int> throws_and_changes (int value, const gchar* message) noexcept
 {
 
   try
@@ -46,7 +46,7 @@ static gioplusplus::asynclib::task<int> throws_and_changes (int value, const gch
 co_return value;
 }
 
-static gioplusplus::asynclib::task<int> wrapped (int value) noexcept
+static gplusplus::asynclib::task<int> wrapped (int value) noexcept
 {
 co_return (co_await simple (value) ^ 1);
 }
@@ -82,21 +82,21 @@ struct small_owning
     { delete owned; }
 };
 
-static gioplusplus::asynclib::task<int> wraps_offload_small ()
+static gplusplus::asynclib::task<int> wraps_offload_small ()
 {
   /* Regression: a small (SOO-sized) owning return type must not be freed twice
    * or returned dangling through the task result path. */
   static_assert (sizeof (small_owning) <= sizeof (void*));
-  auto value = co_await gioplusplus::asynclib::offload ([]{ return small_owning (11); });
+  auto value = co_await gplusplus::asynclib::offload ([]{ return small_owning (11); });
 co_return * value.owned;
 }
 
-static gioplusplus::asynclib::task<small_owning> make_small (int value)
+static gplusplus::asynclib::task<small_owning> make_small (int value)
 {
   co_return small_owning (value);
 }
 
-static gioplusplus::asynclib::task<int> unwraps_small (int value)
+static gplusplus::asynclib::task<int> unwraps_small (int value)
 {
   auto result = co_await make_small (value);
 co_return * result.owned;
@@ -107,29 +107,29 @@ struct private_error: std::exception
   inline const char* what () const noexcept override { return "private failure"; }
 };
 
-static gioplusplus::asynclib::task<int> offload_void_echo (int value)
+static gplusplus::asynclib::task<int> offload_void_echo (int value)
 {
-  co_await gioplusplus::asynclib::offload ([value] () noexcept { g_usleep (1000); });
+  co_await gplusplus::asynclib::offload ([value] () noexcept { g_usleep (1000); });
 co_return value;
 }
 
-static gioplusplus::asynclib::task<int> offload_value_multiply (int value)
+static gplusplus::asynclib::task<int> offload_value_multiply (int value)
 {
-co_return (co_await gioplusplus::asynclib::offload ([value] () noexcept { return value * 3; }));
+co_return (co_await gplusplus::asynclib::offload ([value] () noexcept { return value * 3; }));
 }
 
-static gioplusplus::asynclib::task<int> offload_catch_throw ()
+static gplusplus::asynclib::task<int> offload_catch_throw ()
 {
   try
-    { co_await gioplusplus::asynclib::offload ([] () -> int { throw private_error (); }); }
+    { co_await gplusplus::asynclib::offload ([] () -> int { throw private_error (); }); }
   catch (const private_error&)
     { co_return 77; }
 co_return 0;
 }
 
-static gioplusplus::asynclib::task<std::string> offload_large_string ()
+static gplusplus::asynclib::task<std::string> offload_large_string ()
 {
-  auto result = co_await gioplusplus::asynclib::offload ([] () noexcept
+  auto result = co_await gplusplus::asynclib::offload ([] () noexcept
     { return std::string ("a large payload returned through the SOO heap path"); });
 co_return result;
 }
@@ -149,7 +149,7 @@ int main (int argc, char* argv[])
 
   g_test_add_action (TESTPATHROOT "/error/what", []
     {
-      g_assert_cmpstr (gioplusplus::asynclib::details::error ().what (), ==, "");
+      g_assert_cmpstr (gplusplus::asynclib::details::error ().what (), ==, "");
     });
 
   g_test_add_action (TESTPATHROOT "/new/simple", []
@@ -190,7 +190,7 @@ int main (int argc, char* argv[])
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
 
-          p->result = gioplusplus::asynclib::task_function_finish<simple> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<simple> (async_result, &e);
           g_assert_no_error (e);
           g_atomic_int_set (&p->ready, 1);
         }, &data);
@@ -215,7 +215,7 @@ int main (int argc, char* argv[])
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
 
-          p->result = gioplusplus::asynclib::task_function_finish<throws_simple> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<throws_simple> (async_result, &e);
           g_assert_error (e, G_IO_ERROR, G_IO_ERROR_NOT_FOUND);
           g_clear_error (&e);
           g_atomic_int_set (&p->ready, 1);
@@ -240,7 +240,7 @@ int main (int argc, char* argv[])
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
 
-          p->result = gioplusplus::asynclib::task_function_finish<throws_and_changes> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<throws_and_changes> (async_result, &e);
           g_assert_error (e, G_IO_ERROR, G_IO_ERROR_FAILED);
           g_assert_cmpstr (e->message, ==, p->message);
           g_clear_error (&e);
@@ -265,7 +265,7 @@ int main (int argc, char* argv[])
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
 
-          p->result = gioplusplus::asynclib::task_function_finish<wrapped> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<wrapped> (async_result, &e);
           g_assert_no_error (e);
           g_atomic_int_set (&p->ready, 1);
         }, &data);
@@ -290,7 +290,7 @@ int main (int argc, char* argv[])
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
 
-          p->result = gioplusplus::asynclib::task_function_finish<unwraps_small> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<unwraps_small> (async_result, &e);
           g_assert_no_error (e);
           g_atomic_int_set (&p->ready, 1);
         }, &data);
@@ -315,7 +315,7 @@ int main (int argc, char* argv[])
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
 
-          p->result = gioplusplus::asynclib::task_function_finish<wraps_offload_small> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<wraps_offload_small> (async_result, &e);
           g_assert_no_error (e);
           g_atomic_int_set (&p->ready, 1);
         }, &data);
@@ -333,12 +333,12 @@ int main (int argc, char* argv[])
       /* a non-GError C++ exception survives the round trip through a GError
        * of the extended "C++ exception" domain, preserving its type */
       auto exception = std::make_exception_ptr (private_error ());
-      auto glib_error = gioplusplus::asynclib::details::error::to_glib_error (exception);
+      auto glib_error = gplusplus::asynclib::details::error::to_glib_error (exception);
 
       g_assert_nonnull (glib_error);
       g_assert_cmpstr (glib_error->message, ==, "c++ exception thrown");
 
-      auto recovered = gioplusplus::asynclib::details::error::from_glib_error (glib_error);
+      auto recovered = gplusplus::asynclib::details::error::from_glib_error (glib_error);
       g_assert_true (nullptr != recovered);
 
       bool caught = false;
@@ -355,14 +355,14 @@ int main (int argc, char* argv[])
       /* a boxing::error survives the round trip too: the GError is
        * transferred as-is, carrying its domain, code and message */
       auto error = boxing::error::literal (G_IO_ERROR, G_IO_ERROR_TIMED_OUT, "timed out");
-      auto glib_error = gioplusplus::asynclib::details::error::to_glib_error (std::make_exception_ptr (error));
+      auto glib_error = gplusplus::asynclib::details::error::to_glib_error (std::make_exception_ptr (error));
 
       g_assert_nonnull (glib_error);
       g_assert_cmpuint (glib_error->domain, ==, G_IO_ERROR);
       g_assert_cmpint (glib_error->code, ==, G_IO_ERROR_TIMED_OUT);
       g_assert_cmpstr (glib_error->message, ==, "timed out");
 
-      auto recovered = gioplusplus::asynclib::details::error::from_glib_error (glib_error);
+      auto recovered = gplusplus::asynclib::details::error::from_glib_error (glib_error);
 
       bool caught = false;
       try
@@ -394,7 +394,7 @@ int main (int argc, char* argv[])
           p->got = user_data;
 
           auto e = (GError*) nullptr;
-          p->result = gioplusplus::asynclib::task_function_finish<simple> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<simple> (async_result, &e);
           g_assert_no_error (e);
           g_atomic_int_set (&p->ready, 1);
         }, &data);
@@ -419,7 +419,7 @@ int main (int argc, char* argv[])
         {
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
-          p->result = gioplusplus::asynclib::task_function_finish<offload_void_echo> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<offload_void_echo> (async_result, &e);
           g_assert_no_error (e);
           g_atomic_int_set (&p->ready, 1);
         }, &data);
@@ -444,7 +444,7 @@ int main (int argc, char* argv[])
         {
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
-          p->result = gioplusplus::asynclib::task_function_finish<offload_value_multiply> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<offload_value_multiply> (async_result, &e);
           g_assert_no_error (e);
           g_atomic_int_set (&p->ready, 1);
         }, &data);
@@ -469,7 +469,7 @@ int main (int argc, char* argv[])
         {
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
-          p->result = gioplusplus::asynclib::task_function_finish<offload_catch_throw> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<offload_catch_throw> (async_result, &e);
           g_assert_no_error (e);
           g_atomic_int_set (&p->ready, 1);
         }, &data);
@@ -494,7 +494,7 @@ int main (int argc, char* argv[])
         {
           auto p = (D*) user_data;
           auto e = (GError*) nullptr;
-          p->result = gioplusplus::asynclib::task_function_finish<offload_large_string> (async_result, &e);
+          p->result = gplusplus::asynclib::task_function_finish<offload_large_string> (async_result, &e);
           g_assert_no_error (e);
           g_atomic_int_set (&p->ready, 1);
         }, &data);

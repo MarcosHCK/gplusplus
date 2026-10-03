@@ -1,12 +1,12 @@
 # Copyright (C) 2025-2026 MarcosHCK
-# This file is part of gio++.
+# This file is part of gplusplus.
 #
-# gio++ is free software: you can redistribute it and/or modify
+# gplusplus is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# gio++ is distributed in the hope that it will be useful,
+# gplusplus is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -16,7 +16,7 @@
 #
 
 project \
-  ( 'gioplusplus', 'c', 'cpp',
+  ( 'gplusplus', 'c', 'cpp',
     default_options: [ 'c_std=c23', 'cpp_std=c++26', 'warning_level=3' ],
     license: 'GPL-3.0-or-later',
     license_files: [ 'COPYING' ],
@@ -44,7 +44,7 @@ config.set_quoted ('PACKAGE_NAME', meson.project_name ())
 config.set_quoted ('PACKAGE_STRING', '@0@ @1@'.format (meson.project_name (), meson.project_version ()))
 config.set_quoted ('PACKAGE_TARNAME', meson.project_name ())
 # TODO: for now
-config.set_quoted ('PACKAGE_URL', 'https://github.com/MarcosHCK/GIO++')
+config.set_quoted ('PACKAGE_URL', 'https://github.com/MarcosHCK/gplusplus')
 config.set_quoted ('PACKAGE_VERSION', git_version)
 config.set ('PACKAGE_VERSION_MAJOR', git_version_major)
 config.set ('PACKAGE_VERSION_MINOR', git_version_minor)
@@ -123,7 +123,7 @@ add_project_link_arguments (cpp.get_supported_link_arguments (warning_c_link_arg
 ########################
 
 # source tree
-subdir ('gio++')
+subdir ('gplusplus')
 
 # tests
 subdir ('tests')
@@ -132,7 +132,7 @@ subdir ('tests')
 # Installation         #
 ########################
 
-install_headers (config_h, subdir: 'gio++')
+install_headers (config_h, subdir: 'gplusplus')
 install_data ('COPYING', install_dir: get_option ('datadir') / 'licenses' / meson.project_name ())
 
 ########################
