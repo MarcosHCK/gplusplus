@@ -79,7 +79,7 @@ namespace gplusplus::asynclib::details
   struct async_task_promise_completable<void>: public async_task_promise_base
     {
 
-      inline void return_value () noexcept
+      inline void return_void () noexcept
         {
           g_task_return_pointer (this->_task, NULL, NULL);
         }

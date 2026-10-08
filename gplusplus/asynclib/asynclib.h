@@ -18,6 +18,7 @@
 #include <gplusplus/asynclib/asyncfunction.h>
 #include <gplusplus/asynclib/asyncoffload.h>
 #include <gplusplus/asynclib/asynctask.h>
+#include <gplusplus/asynclib/asynctaskall.h>
 #include <gplusplus/asynclib/asynctaskawaitable.h>
 #include <gplusplus/asynclib/asynctaskcoroutine.h>
 #include <gplusplus/asynclib/asynctaskfunction.h>
@@ -40,4 +41,13 @@ namespace gplusplus::asynclib
 
   template<details::async_task_function auto Function>
   static inline constexpr auto task_function_finish = task_function<Function>::finish;
+
+  template<details::async_task_type... Tasks>
+    requires ((std::same_as<void, typename Tasks::end_details::return_type> && ...)
+           || ((! std::same_as<void, typename Tasks::end_details::return_type>) && ...))
+  static inline constexpr auto all (Tasks&&... tasks) noexcept (std::is_nothrow_invocable_v<details::async_task_all_builder<Tasks ...>, std::tuple<std::remove_cvref_t<Tasks> ...>>)
+    {
+      using task_tuple = std::tuple<std::remove_cvref_t<Tasks> ...>;
+      return details::async_task_all_builder<Tasks...>::build (task_tuple (std::forward<Tasks> (tasks) ...));
+    }
 }

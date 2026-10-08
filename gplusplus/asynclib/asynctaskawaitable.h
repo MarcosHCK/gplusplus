@@ -17,6 +17,7 @@
 #pragma once
 #include <coroutine>
 #include <gplusplus/asynclib/asynctaskawaitablebase.h>
+#include <gplusplus/common/slice.h>
 
 namespace gplusplus::asynclib::details
 {
@@ -53,23 +54,20 @@ namespace gplusplus::asynclib::details
                 { }
             };
 
-          auto data = new (g_slice_alloc0 (sizeof (Data))) Data (handle, *this);
+          auto data = g_slice_new_<Data> (handle, *this);
 
           try { this->_task ([] (GObject* source_object, GAsyncResult* async_result, gpointer user_data)
             {
               auto handle = ((Data*) user_data)->handle;
               ((Data*) user_data)->self.await_complete (source_object, async_result);
-              ((Data*) user_data)->~Data ();
-
-              g_slice_free1 (sizeof (Data), user_data);
+              g_slice_free_<Data> (user_data);
               handle.resume ();
             }, data); }
           catch (...)
             {
 
               this->_error = error::to_glib_error (std::current_exception ());
-              ((Data*) data)->~Data ();
-              g_slice_free1 (sizeof (Data), data);
+              g_slice_free_<Data> (data);
               handle.resume ();
             }
         }
