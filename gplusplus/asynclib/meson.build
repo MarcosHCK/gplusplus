@@ -31,7 +31,7 @@ foreach bit: [ 'begin', 'end' ]
   __asynclib_headers += [ 'asyncfunction@0@.h'.format (bit) ]
 endforeach
 
-foreach bit: [ 'all', 'concept' ]
+foreach bit: [ 'all', 'any', 'concept' ]
   __asynclib_headers += [ 'asynctask@0@.h'.format (bit) ]
 endforeach
 
