@@ -14,5 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-#include <config.h>
-#include <gplusplus/gplusplus.h>
+#pragma once
+#include <gplusplus/asynclib/asynclib.h>
+#include <gplusplus/common/boxing.h>
+#include <gplusplus/common/slice.h>
+#include <gplusplus/object/object.h>

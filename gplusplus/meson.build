@@ -35,7 +35,7 @@ __gplusplus_lib = library ('gplusplus',
   install: true,
   link_whole: [ __asynclib_lib, __common_lib, __object_lib ],
   soversion: '@0@.@1@'.format (git_version_major, git_version_minor),
-  sources: 'dummy.cc',
+  sources: [ 'dummy.cc', 'gplusplus.h' ],
   version: '@0@.@1@.@2@'.format (git_version_major, git_version_minor, git_version_micro))
 
 __gplusplus_dep = declare_dependency (dependencies: [ gio_dep, glib_dep, gobject_dep,
