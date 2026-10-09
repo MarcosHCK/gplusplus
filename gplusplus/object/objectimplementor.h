@@ -60,7 +60,7 @@
 # define GPP_IMPLEMENT(TypeName,type_name,...) _GPP_IMPLEMENT(TypeName, type_name, gplusplus::object::type_tag::normal, __VA_ARGS__)
 
 # define GPP_IMPLEMENT_ANCESTOR(TypeName,type_name) \
-  static inline constexpr auto Ancestor = (gplusplus::object::object_class_ancestor<TypeName, TypeName##Class, type_name##_get_type> ());
+  static inline constexpr auto Ancestor = (gplusplus::object::object_class_ancestor<TypeName##Class, TypeName, type_name##_get_type> ());
 
 # define GPP_IMPLEMENT_INTERFACE(TypeName,type_name,...) \
   static constexpr constexpr_registry::install_once<interface_first_adl_tag, \

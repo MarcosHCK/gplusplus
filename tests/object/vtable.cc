@@ -49,14 +49,13 @@ GPP_IMPLEMENT (base_value, base_probe,
 });
 
 using base_info = __gplusplus_implementor_info_base_value;
-using BaseProbe = gplusplus::object::details::build_class::class_struct<base_info>;
-using BaseProbeClass = gplusplus::object::details::build_class::instance_struct<base_info>;
+using BaseProbe = gplusplus::object::details::build_class::instance_struct<base_info>;
+using BaseProbeClass = gplusplus::object::details::build_class::class_struct<base_info>;
 using base_class_struct = gplusplus::object::details::build_class::class_struct<base_info>;
 
 GPP_IMPLEMENT_FINAL (derived_value, derived_probe,
 {
 
-  /* GPP_IMPLEMENT_ANCESTOR's current argument order is ClassType, InstanceType. */
   GPP_IMPLEMENT_ANCESTOR (BaseProbe, base_probe)
 
   GPP_IMPLEMENT_CLASS_INIT (

@@ -102,8 +102,8 @@ GPP_IMPLEMENT (base_value, base_probe,
 });
 
 using base_info = __gplusplus_implementor_info_base_value;
-using BaseProbe = gplusplus::object::details::build_class::class_struct<base_info>;
-using BaseProbeClass = gplusplus::object::details::build_class::instance_struct<base_info>;
+using BaseProbe = gplusplus::object::details::build_class::instance_struct<base_info>;
+using BaseProbeClass = gplusplus::object::details::build_class::class_struct<base_info>;
 
 GType base_probe_get_type () G_GNUC_CONST;
 
