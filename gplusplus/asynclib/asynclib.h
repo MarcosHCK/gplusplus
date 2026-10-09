@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
+#include <gplusplus/asynclib/asyncdelay.h>
 #include <gplusplus/asynclib/asyncfunction.h>
 #include <gplusplus/asynclib/asyncoffload.h>
 #include <gplusplus/asynclib/asynctask.h>
@@ -61,5 +62,19 @@ namespace gplusplus::asynclib
     {
       using task_tuple = std::tuple<std::remove_cvref_t<Tasks> ...>;
       return details::async_task_any_builder<Tasks...>::build (task_tuple (std::forward<Tasks> (tasks) ...));
+    }
+
+  template<details::time_like T>
+  static inline constexpr auto delay (T interval, GCancellable* cancellable = nullptr) noexcept
+    {
+      constexpr details::async_function<details::_asynclib_async_delay<T>, gpp_asynclib_async_delay_finish> task;
+    return task (std::forward<T> (interval), G_PRIORITY_DEFAULT, cancellable);
+    }
+
+  template<details::time_like T>
+  static inline constexpr auto delay (T interval, int io_priority, GCancellable* cancellable = nullptr) noexcept
+    {
+      constexpr details::async_function<details::_asynclib_async_delay<T>, gpp_asynclib_async_delay_finish> task;
+    return task (std::forward<T> (interval), io_priority, cancellable);
     }
 }

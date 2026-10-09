@@ -18,7 +18,7 @@
 __asynclib_headers = [ 'asynclib.h' ]
 __asynclib_sources = [ ]
 
-foreach bit: [ 'asyncfunction', 'asynctask', 'error' ]
+foreach bit: [ 'asyncdelay', 'asyncfunction', 'asynctask', 'error' ]
   __asynclib_headers += [ '@0@.h'.format (bit) ]
   __asynclib_sources += [ '@0@.cc'.format (bit) ]
 endforeach

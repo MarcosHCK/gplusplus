@@ -51,6 +51,19 @@ test ((testpath + '/task').replace ('/', '.'),
              'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
              'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ] )
 
+test ((testpath + '/delay').replace ('/', '.'),
+      executable ('delay',
+            c_args: c_args +
+                    [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'delay') ],
+            cpp_args: c_args +
+                      [ '-DTESTPATHROOT="@0@"'.format (testpathroot / testpath / 'delay') ],
+            build_by_default: false,
+            dependencies: [ config_dep, __asynclib_dep, __testing_dep ],
+            sources: 'delay.cc'),
+      env: [ __testing_env,
+             'G_TEST_BUILDDIR=@0@'.format (meson.current_build_dir ()),
+             'G_TEST_SRCDIR=@0@'.format (meson.current_source_dir ()), ] )
+
 test ((testpath + '/taskall').replace ('/', '.'),
       executable ('taskall',
             c_args: c_args +
