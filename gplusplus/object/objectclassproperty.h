@@ -87,6 +87,13 @@ namespace gplusplus::object
       static inline constexpr auto get_property = GetProperty;
       static inline constexpr auto set_property = SetProperty;
 
-      using Tag = typename property_tag::details::or2_<PropertyTag, (GParamFlags) (G_PARAM_STATIC_STRINGS)>::type;
+      using Tag = std::conditional_t<!std::same_as<std::nullptr_t, decltype (GetProperty)>
+                                  && !std::same_as<std::nullptr_t, decltype (SetProperty)>,
+                    typename property_tag::details::or2_<PropertyTag, (GParamFlags) (G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE)>::type,
+                  std::conditional_t<!std::same_as<std::nullptr_t, decltype (GetProperty)>,
+                    typename property_tag::details::or2_<PropertyTag, (GParamFlags) (G_PARAM_STATIC_STRINGS | G_PARAM_READABLE)>::type,
+                  std::conditional_t<!std::same_as<std::nullptr_t, decltype (SetProperty)>,
+                    typename property_tag::details::or2_<PropertyTag, (GParamFlags) (G_PARAM_STATIC_STRINGS | G_PARAM_WRITABLE)>::type,
+                    typename property_tag::details::or2_<PropertyTag, (GParamFlags) (G_PARAM_STATIC_STRINGS)>::type>>>;
     };
 }
