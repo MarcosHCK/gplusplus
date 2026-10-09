@@ -56,6 +56,7 @@ config_dep = declare_dependency (sources: config_h)
 config_dep = declare_dependency (dependencies: config_dep, include_directories: include_directories ('.'))
 
 project_build_dir = meson.current_build_dir ()
+project_include_dir = include_directories ('.')
 
 # Common warnings
 

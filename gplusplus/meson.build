@@ -38,8 +38,8 @@ __gplusplus_lib = library ('gplusplus',
   sources: [ 'dummy.cc', 'gplusplus.h' ],
   version: '@0@.@1@.@2@'.format (git_version_major, git_version_minor, git_version_micro))
 
-__gplusplus_dep = declare_dependency (dependencies: [ gio_dep, glib_dep, gobject_dep,
-                                                            config_dep.partial_dependency (compile_args: true) ],
+__gplusplus_dep = declare_dependency (dependencies: [ gio_dep, glib_dep, gobject_dep ],
+  include_directories: project_include_dir,
   link_with: __gplusplus_lib)
 
 import ('pkgconfig').generate (__gplusplus_lib,
