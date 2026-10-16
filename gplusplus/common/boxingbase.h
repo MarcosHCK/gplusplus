@@ -101,6 +101,14 @@ public:
   inline constexpr T* operator* () const noexcept { return this->get (); }
   inline constexpr operator T* () const noexcept { return this->get (); }
 
+  template<typename P = T*>
+    requires std::is_same_v<T, std::remove_pointer_t<P>>
+  inline constexpr auto& operator= (P pointer) noexcept
+    {
+      std::unique_ptr<T, boxing::function_deleter<T, _free_func>>::reset (pointer);
+    return *this;
+    }
+
   inline constexpr auto& operator= (const shared_ptr& o) noexcept (std::is_nothrow_copy_constructible_v<decltype (*this)>)
     {
       shared_ptr<T, _copy_func, _free_func> tmp (o);
@@ -128,6 +136,20 @@ public:
       noexcept (std::is_nothrow_move_constructible_v<std::unique_ptr<T, boxing::function_deleter<T, _free_func>>>):
       std::unique_ptr<T, boxing::function_deleter<T, _free_func>> ((std::unique_ptr<T, boxing::function_deleter<T, _free_func>>&&) std::move (o))
     { }
+
+  template<typename P = T*>
+    requires std::is_same_v<T, std::remove_pointer_t<P>>
+  inline constexpr auto& operator= (P pointer) noexcept
+    {
+      std::unique_ptr<T, boxing::function_deleter<T, _free_func>>::reset (pointer);
+    return *this;
+    }
+
+  inline constexpr auto& operator= (unique_ptr<T, _free_func>&& o) noexcept (std::is_nothrow_move_assignable_v<std::unique_ptr<T, boxing::function_deleter<T, _free_func>>>)
+    {
+      std::unique_ptr<T, boxing::function_deleter<T, _free_func>>::operator= (std::move (o));
+    return *this;
+    }
 
   inline constexpr T* operator* () const noexcept { return this->get (); }
   inline constexpr operator T* () const noexcept { return this->get (); }

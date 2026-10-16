@@ -18,7 +18,7 @@ from argparse import ArgumentParser
 from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
-from typing import Iterable, NamedTuple, TextIO
+from typing import Iterable, TextIO
 
 class StructForVariable:
 
@@ -54,28 +54,28 @@ def make_numeric_descriptor (name: str, type_: str | None = None):
 descriptors = [
 
   StructForDescriptor (name = 'boolean', variables = [ StructForVariable ('DefaultValue', 'gboolean') ]),
-  StructForDescriptor (name = 'boxed', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType>', 'GetType ()') ]),
+  StructForDescriptor (name = 'boxed', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType> auto', 'GetType ()') ]),
 
   make_numeric_descriptor ('char'),
   make_numeric_descriptor ('double'),
 
-  StructForDescriptor (name = 'enum', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType>', 'GetType ()'),
+  StructForDescriptor (name = 'enum', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType> auto', 'GetType ()'),
                                                     StructForVariable ('DefaultValue', 'gint') ]),
 
-  StructForDescriptor (name = 'flags', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType>', 'GetType ()'),
+  StructForDescriptor (name = 'flags', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType> auto', 'GetType ()'),
                                                      StructForVariable ('DefaultValue', 'gint') ]),
 
   make_numeric_descriptor ('float'),
 
-  StructForDescriptor (name = 'gtype', variables = [ StructForVariable ('IsAType', 'details::invocable_r<GType>', 'IsAType ()') ]),
+  StructForDescriptor (name = 'gtype', variables = [ StructForVariable ('IsAType', 'details::invocable_r<GType> auto', 'IsAType ()') ]),
 
   make_numeric_descriptor ('int'),
   make_numeric_descriptor ('int64'),
 
   make_numeric_descriptor ('long'),
 
-  StructForDescriptor (name = 'object', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType>', 'GetType ()') ]),
-  StructForDescriptor (name = 'param', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType>', 'GetType ()') ]),
+  StructForDescriptor (name = 'object', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType> auto', 'GetType ()') ]),
+  StructForDescriptor (name = 'param', variables = [ StructForVariable ('GetType', 'details::invocable_r<GType> auto', 'GetType ()') ]),
 
   StructForDescriptor (name = 'pointer', variables = [ ]),
   StructForDescriptor (name = 'string', variables = [ StructForVariable ('DefaultValue', 'constexpr_string') ]),
@@ -88,8 +88,8 @@ descriptors = [
   make_numeric_descriptor ('ulong'),
   make_numeric_descriptor ('unichar'),
 
-  StructForDescriptor (name = 'variant', variables = [ StructForVariable ('GetType', 'details::invocable_r<const GVariantType*>', 'GetType ()'),
-                                                       StructForVariable ('GetDefaultValue', 'details::invocable_r<GVariant*>', 'GetDefaultValue ()') ]),
+  StructForDescriptor (name = 'variant', variables = [ StructForVariable ('GetType', 'details::invocable_r<const GVariantType*> auto', 'GetType ()'),
+                                                       StructForVariable ('GetDefaultValue', 'details::invocable_r<GVariant*> auto', 'GetDefaultValue ()') ]),
 ]
 
 def struct_for (desc: StructForDescriptor):
