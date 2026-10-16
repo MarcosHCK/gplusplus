@@ -93,6 +93,11 @@ public:
       : std::unique_ptr<T, boxing::function_deleter<T, _free_func>> (_copy_func (o.get ()))
     { }
 
+  inline constexpr T* copy () noexcept (std::is_nothrow_invocable_r_v<T*, decltype (_copy_func), T*>)
+    {
+      return _copy_func (this->get ());
+    }
+
   inline constexpr T* operator* () const noexcept { return this->get (); }
   inline constexpr operator T* () const noexcept { return this->get (); }
 
@@ -106,13 +111,6 @@ public:
     {
       std::unique_ptr<T, boxing::function_deleter<T, _free_func>>::operator= (std::move (o));
     return *this;
-    }
-
-protected:
-
-  static inline T* copy (T* value) noexcept (std::is_nothrow_invocable_r_v<T*, decltype (_copy_func), T*>)
-    {
-      return _copy_func (value);
     }
 };
 

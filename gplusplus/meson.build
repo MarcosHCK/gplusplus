@@ -24,18 +24,21 @@ subdir ('common')
 subdir ('asynclib')
 subdir ('object')
 
+__gplusplus_headers = [ 'gio.h', 'gobject.h', 'gplusplus.h' ]
+__gplusplus_sources = [ 'dummy.cc' ]
+
 __gplusplus_lib = library ('gplusplus',
-  c_args: [ '-DG_LOG_DOMAIN="Gpp.Common"', '-DG_LOG_USE_STRUCTURED=1',
+  c_args: [ '-DG_LOG_DOMAIN="Gpp"', '-DG_LOG_USE_STRUCTURED=1',
             '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
             '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()) ],
-  cpp_args: [ '-DG_LOG_DOMAIN="Gpp.Common"', '-DG_LOG_USE_STRUCTURED=1',
+  cpp_args: [ '-DG_LOG_DOMAIN="Gpp"', '-DG_LOG_USE_STRUCTURED=1',
               '-DBUILD_DIR="@0@"'.format (meson.current_build_dir ()),
               '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()) ],
   dependencies: [ config_dep, gio_dep, glib_dep, gobject_dep ],
   install: true,
   link_whole: [ __asynclib_lib, __common_lib, __object_lib ],
   soversion: '@0@.@1@'.format (git_version_major, git_version_minor),
-  sources: [ 'dummy.cc', 'gplusplus.h' ],
+  sources: [ __gplusplus_headers, __gplusplus_sources ],
   version: '@0@.@1@.@2@'.format (git_version_major, git_version_minor, git_version_micro))
 
 __gplusplus_dep = declare_dependency (dependencies: [ gio_dep, glib_dep, gobject_dep ],

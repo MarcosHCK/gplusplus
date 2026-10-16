@@ -64,7 +64,7 @@ namespace gplusplus::asynclib::details
         requires (std::is_constructible_v<Return, U>)
       inline void return_value (U&& value) noexcept (std::is_nothrow_constructible_v<Return, U>)
         {
-          return g_task_return_object<Return, U> (_task, std::forward<U> (value));
+          return g_task_return_object<Return> (_task, std::forward<U> (value));
         }
 
     protected:

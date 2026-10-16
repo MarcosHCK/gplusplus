@@ -99,6 +99,10 @@
 
 # define GPP_IMPLEMENT_DEFAULT_INSTANCE_INIT(...) GPP_IMPLEMENT_INSTANCE_INIT({ new (&p_self->self) Type (__VA_ARGS__); })
 
+# define GPP_IMPLEMENT_INSTANCE_TYPE gplusplus::object::details::build_class::instance_struct<Self>*
+# define GPP_IMPLEMENT_CLASS_TYPE gplusplus::object::details::build_class::class_struct<Self>*
+# define GPP_IMPLEMENT_INSTANCE_SELF(p_self) (&((gplusplus::object::details::build_class::instance_struct<Self>*) ((pself)))->self)
+
 # define GPP_IMPLEMENT_CONSTRUCTED(...) \
   static inline void class_constructed (GObject* p_self) noexcept \
     { using instance_struct = gplusplus::object::details::build_class::instance_struct<Self>; \

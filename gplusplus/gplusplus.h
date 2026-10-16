@@ -15,7 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #pragma once
-#include <gplusplus/asynclib/asynclib.h>
 #include <gplusplus/common/boxing.h>
 #include <gplusplus/common/slice.h>
-#include <gplusplus/object/object.h>
+#include <gplusplus/asynclib/error.h>
+
+namespace gplusplus
+{
+  using gplusplus::asynclib::details::error;
+}

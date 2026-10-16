@@ -16,57 +16,206 @@
  */
 #pragma once
 #include <gio/gio.h>
-#include <gplusplus/common/soo.h>
+#include <gplusplus/common/boxing.h>
+#include <gplusplus/common/slice.h>
 
 namespace gplusplus::asynclib::details
 {
 
-  template<typename T>
-    requires (std::is_destructible_v<T>)
-  static inline constexpr void _g_task_return_object_notify (gpointer ptr) noexcept (std::is_nothrow_destructible_v<T>)
+  template<typename T> struct _task_return
     {
-      soo_ptr::destroy<T> (&ptr);
-    }
+
+      template<typename... Args>
+      static inline constexpr bool noexcept_ = std::is_nothrow_constructible_v<T, Args ...>;
+
+      template<typename... Args>
+        requires (std::is_constructible_v<T, Args ...>)
+      inline void operator() (GTask* task, Args&&... args) noexcept (noexcept_<Args ...>)
+        {
+          auto ptr = g_slice_new_<T> (std::forward<Args> (args) ...);
+        return g_task_return_pointer (task, ptr, g_slice_free_<T>);
+        }
+    };
 
   template<typename T,
-           std::convertible_to<T> U = T>
-    requires (std::is_constructible_v<T, U>)
-  static inline constexpr void g_task_return_object (GTask* task, U&& value) noexcept (std::is_nothrow_constructible_v<T, U>)
+           boxing::details::_copy_func<T> auto _copy_func,
+           boxing::details::_free_func<T> auto _free_func>
+  struct _task_return<boxing::shared_ptr<T, _copy_func, _free_func>>
     {
-      gpointer pointer;
-      soo_ptr::create<T> (&pointer, std::forward<U> (value));
-    return g_task_return_pointer (task, pointer, _g_task_return_object_notify<T>);
+
+      template<typename... Args>
+      static inline constexpr bool noexcept_ = std::is_nothrow_constructible_v<T, Args ...>;
+
+      template<typename... Args>
+        requires (std::is_constructible_v<T, Args ...>)
+      inline void operator() (GTask* task, Args&&... args) noexcept (noexcept_<Args ...>)
+        {
+          auto ptr = boxing::shared_ptr<T, _copy_func, _free_func> (std::forward<Args> (args) ...);
+        return g_task_return_pointer (task, ptr.copy (), _free_func);
+        }
+    };
+
+  template<typename T,
+           boxing::details::_free_func<T> auto _free_func>
+  struct _task_return<boxing::unique_ptr<T, _free_func>>
+    {
+
+      template<typename... Args>
+      static inline constexpr bool noexcept_ = std::is_nothrow_constructible_v<T, Args ...>;
+
+      template<typename... Args>
+        requires (std::is_constructible_v<T, Args ...>)
+      inline void operator() (GTask* task, Args&&... args) noexcept (noexcept_<Args ...>)
+        {
+          auto ptr = boxing::unique_ptr<T, _free_func> (std::forward<Args> (args) ...);
+        return g_task_return_pointer (task, ptr.release (), _free_func);
+        }
+    };
+
+  template<> struct _task_return<bool>
+    {
+
+      template<typename... Args>
+      static inline constexpr bool noexcept_ = std::is_nothrow_constructible_v<bool, Args ...>;
+
+      template<typename... Args>
+        requires (std::is_constructible_v<bool, Args ...>)
+      inline void operator() (GTask* task, Args&&... args) noexcept (noexcept_<Args ...>)
+        {
+          auto val = bool (std::forward<Args> (args) ...);
+        return g_task_return_boolean (task, val);
+        }
+    };
+
+  template<> struct _task_return<int>
+    {
+
+      template<typename... Args>
+      static inline constexpr bool noexcept_ = std::is_nothrow_constructible_v<int, Args ...>;
+
+      template<typename... Args>
+        requires (std::is_constructible_v<int, Args ...>)
+      inline void operator() (GTask* task, Args&&... args) noexcept (noexcept_<Args ...>)
+        {
+          auto val = int (std::forward<Args> (args) ...);
+        return g_task_return_int (task, val);
+        }
+    };
+
+  template<> struct _task_return<void*>
+    {
+
+      template<typename... Args>
+      static inline constexpr bool noexcept_ = std::is_nothrow_constructible_v<void*, Args ...>;
+
+      using pointer = void*;
+
+      template<typename... Args>
+        requires (std::is_constructible_v<void*, Args ...>)
+      inline void operator() (GTask* task, Args&&... args) noexcept (noexcept_<Args ...>)
+        {
+          auto val = pointer (std::forward<Args> (args) ...);
+        return g_task_return_pointer (task, val, NULL);
+        }
+    };
+
+  template<typename T, typename... Args>
+    requires (std::is_constructible_v<T, Args ...>)
+  static inline void g_task_return_object (GTask* task, Args&&... args) noexcept (_task_return<T>::template noexcept_<Args ...>)
+    {
+      return (_task_return<T> {}) (task, std::forward<Args> (args) ...);
     }
 
-  template<> inline constexpr void g_task_return_object<bool, bool> (GTask* task, bool&& value) noexcept
+  template<typename T> struct _task_propagate
     {
-      return g_task_return_boolean (task, value);
-    }
+
+      using box = boxing::unique_ptr<T, g_slice_free_<T>>;
+
+      static inline constexpr bool noexcept_ = std::is_nothrow_move_constructible_v<T>
+                                            && std::is_nothrow_destructible_v<T>;
+
+      inline T operator() (GTask* task, GError** error) noexcept (noexcept_)
+        {
+          GError* tmperr = NULL;
+
+          if (box ptr = (T*) g_task_propagate_pointer (task, &tmperr); G_LIKELY (NULL == tmperr))
+
+            return T (std::move (*ptr.get ()));
+          else
+            return g_propagate_error (error, tmperr), T ();
+        }
+    };
+
+  template<typename T,
+           boxing::details::_copy_func<T> auto _copy_func,
+           boxing::details::_free_func<T> auto _free_func>
+  struct _task_propagate<boxing::shared_ptr<T, _copy_func, _free_func>>
+    {
+
+      using box = boxing::shared_ptr<T, _copy_func, _free_func>;
+
+      static inline constexpr bool noexcept_ = std::is_constructible_v<boxing::shared_ptr<T, _copy_func, _free_func>, T*>;
+
+      inline box operator() (GTask* task, GError** error) noexcept (noexcept_)
+        {
+          return (T*) g_task_propagate_pointer (task, error);
+        }
+    };
+
+  template<typename T,
+           boxing::details::_free_func<T> auto _free_func>
+  struct _task_propagate<boxing::unique_ptr<T, _free_func>>
+    {
+
+      using box = boxing::unique_ptr<T, _free_func>;
+
+      static inline constexpr bool noexcept_ = std::is_constructible_v<boxing::unique_ptr<T, _free_func>, T*>;
+
+      inline box operator() (GTask* task, GError** error) noexcept (noexcept_)
+        {
+          return (T*) g_task_propagate_pointer (task, error);
+        }
+    };
+
+  template<> struct _task_propagate<bool>
+    {
+
+      static inline constexpr bool noexcept_ = true;
+
+      inline bool operator() (GTask* task, GError** error) noexcept (noexcept_)
+        {
+          return g_task_propagate_boolean (task, error);
+        }
+    };
+
+  template<> struct _task_propagate<int>
+    {
+
+      static inline constexpr bool noexcept_ = true;
+
+      inline int operator() (GTask* task, GError** error) noexcept (noexcept_)
+        {
+          return g_task_propagate_int (task, error);
+        }
+    };
+
+  template<> struct _task_propagate<void*>
+    {
+
+      static inline constexpr bool noexcept_ = true;
+
+      using pointer = void*;
+
+      inline pointer operator() (GTask* task, GError** error) noexcept (noexcept_)
+        {
+          return g_task_propagate_pointer (task, error);
+        }
+    };
 
   template<typename T>
-    requires (std::is_move_constructible_v<T>)
-  static inline constexpr T g_task_propagate_object (GTask* task, GError** error) noexcept (std::is_nothrow_move_constructible_v<T>
-                                                                                         && (!std::is_destructible_v<T> || std::is_nothrow_destructible_v<T>))
+    requires (std::is_default_constructible_v<T> && std::is_move_constructible_v<T>)
+  static inline constexpr T g_task_propagate_object (GTask* task, GError** error) noexcept (_task_propagate<T>::noexcept_)
     {
-
-      GError* tmperr = NULL;
-
-      if (auto ptr = g_task_propagate_pointer (task, &tmperr); G_UNLIKELY (NULL != tmperr))
-
-        return (g_propagate_error (error, tmperr), T ());
-      else
-        {
-          T result (std::move (*(T*) soo_ptr::cast<T> (&ptr)));
-
-          if constexpr (std::is_destructible_v<T>)
-            _g_task_return_object_notify<T> (ptr);
-        return result;
-        }
-    }
-
-  template<>
-  inline constexpr bool g_task_propagate_object<bool> (GTask* task, GError** error) noexcept
-    {
-      return g_task_propagate_boolean (task, error);
+      return (_task_propagate<T> {}) (task, error);
     }
 }
