@@ -101,7 +101,7 @@
 
 # define GPP_IMPLEMENT_INSTANCE_TYPE gplusplus::object::details::build_class::instance_struct<Self>*
 # define GPP_IMPLEMENT_CLASS_TYPE gplusplus::object::details::build_class::class_struct<Self>*
-# define GPP_IMPLEMENT_INSTANCE_SELF(p_self) (&((gplusplus::object::details::build_class::instance_struct<Self>*) ((pself)))->self)
+# define GPP_IMPLEMENT_INSTANCE_SELF(p_self) (&((gplusplus::object::details::build_class::instance_struct<Self>*) ((p_self)))->self)
 
 # define GPP_IMPLEMENT_CONSTRUCTED(...) \
   static inline void class_constructed (GObject* p_self) noexcept \
