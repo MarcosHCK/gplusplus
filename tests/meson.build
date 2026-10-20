@@ -30,7 +30,7 @@ __testing_lib = static_library ('testing',
               '-DSOURCE_DIR="@0@"'.format (meson.current_source_dir ()),
               '-DTESTPATHROOT="@0@"'.format (testpathroot) ],
   build_by_default: false,
-  dependencies: [ config_dep, gio_dep ],
+  dependencies: [ config_dep, gio_dep, __common_dep ],
   sources: [ 'testing.cc', 'testing.h' ])
 
 __testing_dep = declare_dependency (dependencies: [ config_dep, gio_dep ],

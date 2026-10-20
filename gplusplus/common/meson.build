@@ -30,6 +30,11 @@ foreach bit: [ 'base', 'concepts', 'freeable', 'object', 'variant' ]
   __common_headers += [ 'boxing@0@.h'.format (bit) ]
 endforeach
 
+foreach bit: [ 'testing' ] 
+  __common_headers += [ '@0@.h'.format (bit) ]
+  __common_sources += [ '@0@.cc'.format (bit) ]
+endforeach
+
 foreach bit: [ 'bytes', 'error', 'variantdict', 'variantiter' ]
   __common_headers += [ 'boxing@0@.h'.format (bit) ]
   __common_sources += [ 'boxing@0@.cc'.format (bit) ]

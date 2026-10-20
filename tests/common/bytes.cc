@@ -75,10 +75,10 @@ int main (int argc, char* argv[])
     {
 
       auto [ data1, length1 ] = g_test_rand_data ();
-      auto bytes1 = g_bytes_new_take (data1.steal (), length1);
+      auto bytes1 = g_bytes_new_take (data1.release (), length1);
 
       auto [ data2, length2 ] = g_test_rand_data ();
-      auto bytes2 = g_bytes_new_take (data2.steal (), length2);
+      auto bytes2 = g_bytes_new_take (data2.release (), length2);
 
       auto box1 = boxing::bytes (bytes1);
       auto box2 = boxing::bytes (bytes2);
@@ -97,7 +97,7 @@ int main (int argc, char* argv[])
       auto [ data1, length1 ] = g_test_rand_data ();
       auto data2 = (guint8*) g_memdup2 (data1, length1);
 
-      auto box1 = boxing::bytes (g_bytes_new_take (data1.steal (), length1));
+      auto box1 = boxing::bytes (g_bytes_new_take (data1.release (), length1));
       auto box2 = boxing::bytes (g_bytes_new_take (data2, length1));
 
       g_assert_true (box1 == box2);
@@ -125,7 +125,7 @@ int main (int argc, char* argv[])
 
       auto [ data, length ] = g_test_rand_data ();
       auto view = std::string_view ((const char*) *data, length);
-      auto box = boxing::bytes (g_bytes_new_take (data.steal (), length));
+      auto box = boxing::bytes (g_bytes_new_take (data.release (), length));
 
       g_assert_true (box == view);
       g_assert_false (box != view);
@@ -149,7 +149,7 @@ int main (int argc, char* argv[])
 
       auto [ data, length ] = g_test_rand_data ();
       auto raw_data = (gconstpointer) *data;
-      auto box = boxing::bytes (g_bytes_new_take (data.steal (), length));
+      auto box = boxing::bytes (g_bytes_new_take (data.release (), length));
 
       auto [ ptr, size ] = box.data ();
 
