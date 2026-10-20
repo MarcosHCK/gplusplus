@@ -37,5 +37,6 @@ namespace std
   struct coroutine_traits<gplusplus::asynclib::details::async_task<_Begin, _End, Functor>, Args ...>::promise_type:
       public gplusplus::asynclib::details::async_task_promise<typename gplusplus::asynclib::details::async_function_end_details<decltype (_End)>::return_type, Functor, Args ...>
     {
+      using gplusplus::asynclib::details::async_task_promise<typename gplusplus::asynclib::details::async_function_end_details<decltype (_End)>::return_type, Functor, Args ...>::async_task_promise;
     };
 }
