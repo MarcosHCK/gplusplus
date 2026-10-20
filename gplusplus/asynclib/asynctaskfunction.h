@@ -48,6 +48,23 @@ namespace gplusplus::asynclib::details
   template<typename T>
   concept async_task_function = async_task_function_details<T>::valid;
 
+  template<async_task_function auto _Function, typename>
+  struct async_task_function_operable_beginable;
+
+  template<async_task_function auto _Function, typename Return, bool Noexcept, typename... Args>
+  struct async_task_function_operable_beginable<_Function, Return (*) (Args ...) noexcept (Noexcept)>
+    {
+
+      using function_details = async_task_function_details<decltype (_Function)>;
+
+      static inline constexpr void begin (Args... args, GAsyncReadyCallback callback, gpointer user_data)
+          noexcept (function_details::begin_details::noexcept_v)
+        {
+          auto task = _Function (std::forward<Args> (args) ...);
+        return task.begin (callback, user_data);
+        }
+    };
+
   template<async_task_function auto _Function,
            typename Referrer>
   struct async_task_function_operable_finishable
@@ -76,7 +93,8 @@ namespace gplusplus::asynclib::details
     };
 
   template<async_task_function auto _Function>
-  struct async_task_function_operable: public async_task_function_operable_finishable<_Function,
+  struct async_task_function_operable: public async_task_function_operable_beginable<_Function, decltype (_Function)>,
+                                       public async_task_function_operable_finishable<_Function,
                                         typename async_task_function_details<decltype (_Function)>::end_details::referrer_type>
     {
 

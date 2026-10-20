@@ -42,6 +42,9 @@ namespace gplusplus::asynclib
   using task_function = details::async_task_function_operable<Function>;
 
   template<details::async_task_function auto Function>
+  static inline constexpr auto task_function_begin = task_function<Function>::begin;
+
+  template<details::async_task_function auto Function>
   static inline constexpr auto task_function_finish = task_function<Function>::finish;
 
   template<details::async_task_type... Tasks>

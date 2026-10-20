@@ -35,7 +35,7 @@ foreach bit: [ 'all', 'any', 'concept' ]
   __asynclib_headers += [ 'asynctask@0@.h'.format (bit) ]
 endforeach
 
-foreach bit: [ 'awaitable', 'awaitablebase', 'coroutine', 'function', 'promise', 'promiseactions' ]
+foreach bit: [ 'awaitable', 'awaitablebase', 'coroutine', 'function', 'promise', 'promiseactions', 'promiseguard' ]
   __asynclib_headers += [ 'asynctask@0@.h'.format (bit) ]
 endforeach
 

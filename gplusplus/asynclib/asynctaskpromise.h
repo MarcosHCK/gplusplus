@@ -19,9 +19,11 @@
 #include <gio/gio.h>
 #include <gplusplus/asynclib/asynctask.h>
 #include <gplusplus/asynclib/asynctaskpromiseactions.h>
+#include <gplusplus/asynclib/asynctaskpromiseguard.h>
 #include <gplusplus/asynclib/error.h>
 #include <gplusplus/common/boxing.h>
 #include <gplusplus/common/soo.h>
+#include <type_traits>
 
 namespace gplusplus::asynclib::details
 {
@@ -98,25 +100,9 @@ namespace gplusplus::asynclib::details
   struct async_task_promise: public async_task_promise_completable<Return>
     {
 
-      template<typename promise_type> struct __coroutine_handle_guard
-        {
-
-          std::coroutine_handle<promise_type> handle = nullptr;
-
-          inline ~__coroutine_handle_guard ()
-            { ((nullptr == handle) ? nullptr : (handle = (handle.destroy (), nullptr))); }
-
-          inline __coroutine_handle_guard (__coroutine_handle_guard&& o) noexcept: handle (o.handle)
-            { o.handle = nullptr; }
-
-          __coroutine_handle_guard (const __coroutine_handle_guard&) = delete;
-
-          inline __coroutine_handle_guard (std::coroutine_handle<promise_type> _handle) noexcept: handle (_handle)
-            { }
-
-          inline void resume () noexcept (std::is_nothrow_invocable_v<decltype (&std::coroutine_handle<promise_type>::resume)>)
-            { ((nullptr == handle) ? nullptr : (handle = (handle.resume (), nullptr))); }
-        };
+      async_task_promise () = default;
+      async_task_promise (async_task_promise&&) = default;
+      async_task_promise (const async_task_promise&) = delete;
 
       static constexpr auto _Begin = async_task_promise_base::begin_mock;
       static constexpr auto _End = async_task_promise_completable<Return>::fulfill;
@@ -128,7 +114,7 @@ namespace gplusplus::asynclib::details
           using promise_type = typename std::coroutine_traits<task_type, Args ...>::promise_type;
 
           auto handle = std::coroutine_handle<promise_type>::from_promise ((promise_type&) *this);
-          auto guard = __coroutine_handle_guard<promise_type> (handle);
+          auto guard = async_task_promise_guard<promise_type> (handle);
 
           auto begin = [this, guard = std::move (guard)] (GAsyncReadyCallback callback, gpointer user_data) mutable -> void
             {
@@ -137,6 +123,45 @@ namespace gplusplus::asynclib::details
             };
         return async_task<_Begin, _End, Functor> (std::move (begin));
         }
+    };
+
+  template<async_task_promise_target Return,
+           typename Functor,
+           typename Referrer,
+           typename... Args>
+  struct async_task_promise<Return, Functor, boxing::object<Referrer>, Args ...>: public async_task_promise_completable<Return>
+    {
+
+      async_task_promise () = delete;
+      async_task_promise (async_task_promise&&) = default;
+      async_task_promise (const async_task_promise&) = delete;
+
+      inline constexpr async_task_promise (boxing::object<Referrer>& referrer, Args&...) noexcept:
+          _source_object (referrer.get ())
+        { }
+
+      static constexpr auto _Begin = async_task_promise_base::begin_mock;
+      static constexpr auto _End = async_task_promise_completable<Return>::fulfill;
+
+      inline constexpr async_task<_Begin, _End, Functor> get_return_object () noexcept
+        {
+
+          using task_type = async_task<_Begin, _End, Functor>;
+          using promise_type = typename std::coroutine_traits<task_type, Args ...>::promise_type;
+
+          auto handle = std::coroutine_handle<promise_type>::from_promise ((promise_type&) *this);
+          auto guard = async_task_promise_guard<promise_type> (handle);
+
+          auto begin = [this, guard = std::move (guard)] (GAsyncReadyCallback callback, gpointer user_data) mutable -> void
+            {
+              this->_task = g_task_new ((gpointer) _source_object, NULL, callback, user_data);
+              guard.resume ();
+            };
+        return async_task<_Begin, _End, Functor> (std::move (begin));
+        }
+
+    private:
+      Referrer* _source_object;
     };
 
   template<typename T,

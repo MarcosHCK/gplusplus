@@ -25,6 +25,11 @@ static gplusplus::asynclib::task<int> simple (int value) noexcept
 co_return value;
 }
 
+static gplusplus::asynclib::task<int> source_object_task (boxing::object<GFile> file) noexcept
+{
+co_return 41;
+}
+
 gplusplus::asynclib::async_function<g_file_read_async, g_file_read_finish> g_file_read_task;
 
 static gplusplus::asynclib::task<int> throws_simple (int value) noexcept
@@ -199,6 +204,44 @@ int main (int argc, char* argv[])
         g_main_context_iteration (main_context, FALSE);
 
       g_assert_cmpint (0, ==, rand ^ data.result);
+    });
+
+  g_test_add_action (TESTPATHROOT "/execute/source-object", []
+    {
+
+      struct D { GWeakRef source_weak; GObject* source_object; guint ready; int result; }
+        data = { .source_weak = { }, .source_object = nullptr, .ready = 0, .result = 0, };
+
+      {
+        auto file = boxing::object<GFile> (g_file_new_for_path ("/"));
+        data.source_object = G_OBJECT (file.get ());
+        g_weak_ref_init (&data.source_weak, data.source_object);
+
+        auto task = source_object_task (file);
+        task.begin ([](GObject* source_object, GAsyncResult* async_result, gpointer user_data)
+          {
+            auto p = (D*) user_data;
+            auto e = (GError*) nullptr;
+            auto source_ref = g_weak_ref_get (&p->source_weak);
+
+            g_assert_nonnull (source_ref);
+            g_assert_true (source_object == p->source_object);
+            g_assert_true (source_ref == source_object);
+            g_assert_true (g_task_is_valid (async_result, p->source_object));
+            g_assert_true (g_task_get_source_object (G_TASK (async_result)) == p->source_object);
+            g_object_unref (source_ref);
+
+            p->result = gplusplus::asynclib::task_function_finish<source_object_task> (async_result, &e);
+            g_assert_no_error (e);
+            g_atomic_int_set (&p->ready, 1);
+          }, &data);
+      }
+
+      for (auto main_context = g_main_context_get_thread_default (); 0 == g_atomic_int_get (&data.ready);)
+        g_main_context_iteration (main_context, FALSE);
+
+      g_assert_cmpint (41, ==, data.result);
+      g_weak_ref_clear (&data.source_weak);
     });
 
   g_test_add_action (TESTPATHROOT "/execute/throws/simple", []
